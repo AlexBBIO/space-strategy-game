@@ -99,9 +99,23 @@ io.on('connection', (socket) => {
   
   // Player identification
   socket.on('identify', (data) => {
-    console.log(`Player identified: ${data.playerName} (${data.playerId})`);
-    socket.playerId = data.playerId;
-    socket.playerName = data.playerName;
+    // Generate a playerId if none is provided
+    const playerId = data.playerId || `server_player_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const playerName = data.playerName || `Player_${playerId.substring(0, 5)}`;
+    
+    console.log(`Player identified: ${playerName} (${playerId})`);
+    
+    // Store player info on the socket
+    socket.playerId = playerId;
+    socket.playerName = playerName;
+    
+    // Send confirmation to the client with their ID
+    socket.emit('identifyConfirm', { 
+      playerId: playerId,
+      playerName: playerName,
+      success: true,
+      message: 'Successfully connected to server'
+    });
     
     // Join lobby
     socket.join('lobby');
@@ -111,7 +125,7 @@ io.on('connection', (socket) => {
     io.sockets.sockets.forEach(s => {
       if (s.playerName) {
         players.push({
-          id: s.playerId,
+          id: s.playerId || 'unknown',
           name: s.playerName
         });
       }

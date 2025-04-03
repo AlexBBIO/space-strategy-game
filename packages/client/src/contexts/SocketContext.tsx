@@ -54,12 +54,43 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       // Identify player if available
       if (player) {
+        console.log('Identifying player:', player.name, 'with ID:', player.id || 'generating new ID');
         socketInstance.emit('identify', { 
           playerId: player.id,
           playerName: player.name 
         });
+      } else {
+        console.log('No player data available, using anonymous login');
+        // Send anonymous identify if no player data exists
+        socketInstance.emit('identify', { 
+          playerName: `Guest_${Math.floor(Math.random() * 1000)}` 
+        });
       }
     });
+    
+    // Handle identity confirmation from server
+    socketInstance.on('identifyConfirm', (data) => {
+      console.log('Identity confirmed by server:', data);
+      
+      // If the server assigned a new ID, update our local player
+      if (data.playerId && (!player || player.id !== data.playerId)) {
+        const { setPlayer } = usePlayerStore.getState();
+        setPlayer({
+          id: data.playerId,
+          name: data.playerName || player?.name || `Player_${data.playerId.substring(0, 5)}`,
+          color: player?.color || getRandomColor() // Generate a random color if needed
+        });
+      }
+    });
+    
+    // Helper function to generate a random color
+    function getRandomColor() {
+      const colors = [
+        '#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3',
+        '#33FFF3', '#F333FF', '#FF3333', '#33FF33', '#3333FF'
+      ];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
 
     socketInstance.on('disconnect', () => {
       console.log('Socket disconnected!');
