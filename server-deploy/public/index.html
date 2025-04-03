@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Strategy Game Server</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121225;
+            color: #e2e2ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            padding: 2rem;
+            border-radius: 10px;
+            background-color: #1d1d35;
+            box-shadow: 0 0 20px rgba(75, 75, 255, 0.3);
+        }
+        h1 {
+            color: #6b6bff;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+        }
+        p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: #1a8c1a;
+            color: white;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Space Strategy Game Server</h1>
+        <p>This is the server component of the Space Strategy Game. The server provides real-time multiplayer functionality using Socket.IO.</p>
+        <p>The client application is available at: <a href="https://space-strategy-game.windsurf.build" style="color: #6b6bff;">space-strategy-game.windsurf.build</a></p>
+        <p>Server Status: <span class="status">ONLINE</span></p>
+        <p>API Endpoint: <code>/api</code></p>
+        <p>Socket.IO Endpoint: <code>/socket.io</code></p>
+    </div>
+
+    <script>
+        // Simple server status check
+        fetch('/api')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server status:', data);
+            })
+            .catch(err => {
+                document.querySelector('.status').style.backgroundColor = '#8c1a1a';
+                document.querySelector('.status').textContent = 'ERROR';
+                console.error('Error checking server status:', err);
+            });
+    </script>
+</body>
+</html>

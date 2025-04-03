@@ -1,0 +1,25 @@
+{
+  "name": "space-strategy-game",
+  "version": "1.0.0",
+  "description": "A multiplayer space strategy game",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "start:client": "npm run start -w packages/client",
+    "start:server": "npm run start -w packages/server",
+    "build": "npm run build:shared && npm run build:client",
+    "build:shared": "npm run build -w packages/shared",
+    "build:client": "npm run build -w packages/client",
+    "build:server": "npm run build -w packages/server",
+    "test": "npm run test -ws"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "typescript": "^5.1.6"
+  }
+}

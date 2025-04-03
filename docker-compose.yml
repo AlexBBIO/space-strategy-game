@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: space-game-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: space_game
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: space-game-server
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_DATABASE=space_game
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./packages/server/src:/app/packages/server/src
+      - ./packages/shared/src:/app/packages/shared/src
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: space-game-client
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_SERVER_URL=http://localhost:3001
+    volumes:
+      - ./packages/client/src:/app/packages/client/src
+      - ./packages/shared/src:/app/packages/shared/src
+    depends_on:
+      - server
+
+volumes:
+  postgres-data:
