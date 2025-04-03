@@ -205,6 +205,51 @@ io.on('connection', (socket) => {
     }
   });
   
+  // Get game state handler
+  socket.on('getGameState', (gameId) => {
+    console.log(`Player ${socket.playerName} requested game state for ${gameId}`);
+    
+    // Check if games object exists
+    const games = socket.games || {};
+    const game = games[gameId];
+    
+    if (!game) {
+      // If game doesn't exist, create a dummy game state
+      const emptyGameState = {
+        id: gameId,
+        name: 'New Game',
+        players: [
+          {
+            id: socket.playerId,
+            name: socket.playerName,
+            color: '#FF5733'
+          }
+        ],
+        planets: [],
+        fleets: [],
+        phaseLines: [],
+        turn: 0,
+        status: 'waiting'
+      };
+      
+      // Store the game for future reference
+      games[gameId] = emptyGameState;
+      socket.games = games;
+      
+      // Join the game room
+      socket.join(gameId);
+      socket.gameId = gameId;
+      
+      console.log(`Created empty game state for ${gameId}`);
+      socket.emit('gameState', emptyGameState);
+      return;
+    }
+    
+    // Return the game state to the client
+    console.log(`Sending game state for ${gameId}`);
+    socket.emit('gameState', game);
+  });
+  
   // Command handler for generalized client commands
   socket.on('command', (command) => {
     console.log(`Received command from ${socket.playerName}:`, command);
