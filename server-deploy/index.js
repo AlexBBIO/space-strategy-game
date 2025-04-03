@@ -28,6 +28,7 @@ const server = http.createServer(app);
 // Allowed origins for CORS
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:5173',
   'http://localhost:8888',
   'https://space-strategy-game.windsurf.build',
   'https://space-strategy-game-ogfyt.netlify.app'
@@ -52,22 +53,17 @@ app.use(cors({
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Set up Socket.IO with CORS configuration
+// Set up Socket.IO with CORS configuration - allow all origins to fix connection issues
 const io = new Server(server, {
   cors: {
-    origin: function(origin, callback) {
-      // Same as above - allow all in development
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        console.log(`Socket origin ${origin} is connecting`);
-        return callback(null, true);
-      }
-      return callback(null, true);
-    },
-    methods: ['GET', 'POST', 'OPTIONS'],
-    credentials: true
+    origin: "*", // Allow all origins to fix connection issues
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"]
   },
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000, // Increase timeout for better connection stability
+  pingInterval: 25000
 });
 
 // Define port
