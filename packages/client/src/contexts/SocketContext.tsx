@@ -14,7 +14,8 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL ||
 export const API_URL = isProduction ? '/.netlify/functions/game-api' : 'http://localhost:3001/api';
 
 // Check for demo mode (no server)
-const useDemo = new URLSearchParams(window.location.search).has('demo') || isProduction;
+// Only activate demo mode when specifically requested via URL parameter
+const useDemo = new URLSearchParams(window.location.search).has('demo');
 
 console.log(`Environment: ${isProduction ? 'Production' : 'Development'}, Using server: ${SERVER_URL}, Demo mode: ${useDemo}`);
 
@@ -41,6 +42,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
   const reconnectionDelayRef = useRef(2000);
+  
+  console.log(`Socket initialization - Demo mode: ${isDemo ? 'ACTIVE' : 'INACTIVE'}`);
 
   useEffect(() => {
     // Don't create a connection if we're in demo mode
