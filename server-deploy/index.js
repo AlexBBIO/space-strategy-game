@@ -3,7 +3,23 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
+const { nullSafeValue } = require('./fixed-query');
 require('dotenv').config();
+
+// Global error handler for unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't crash in production environment
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(1);
+  }
+});
+
+// Error logging
+const logError = (location, error) => {
+  console.error(`ERROR in ${location}:`, error);
+  return { error: `${error.message || 'Unknown error'}`, location };
+};
 
 // Create Express app and HTTP server
 const app = express();
@@ -57,12 +73,27 @@ const io = new Server(server, {
 // Define port
 const PORT = process.env.PORT || 3001;
 
-// Basic API route
+// Basic API routes
 app.get('/api', (req, res) => {
   res.json({
     message: 'Space Strategy Game Server is running!',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
+  });
+});
+
+// Health check endpoint for deployment platforms
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    error: 'Server error',
+    message: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message
   });
 });
 

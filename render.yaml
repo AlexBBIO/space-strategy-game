@@ -1,0 +1,15 @@
+services:
+  # Web service for the game server
+  - type: web
+    name: space-strategy-game-server
+    env: node
+    buildCommand: cd server-deploy && npm install
+    startCommand: cd server-deploy && node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    healthCheckPath: /health
+    plan: free
+    autoDeploy: true
