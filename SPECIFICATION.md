@@ -148,12 +148,38 @@ The game uses a simple identification system:
 3. **Persistence**: Game state is currently only held in memory on the server
 4. **Authentication**: Simple identification system without true authentication
 
+## Game Maps and Worlds
+
+### Two-Player Map System
+The game currently features a balanced strategic map designed specifically for 2-player matches:
+
+#### Map Layout
+- **Starting Locations**: Each player begins with a home system in opposite corners of the map
+- **Neutral Territories**: 5 valuable planets positioned in the middle create contested areas
+- **Resource Distribution**: Various resource specializations across planets provide strategic choices
+- **Connectivity**: Phase lanes create strategic pathways and chokepoints
+
+#### Planet Types
+1. **Player Home Systems**
+   - Capital Planet: Large planet with shipyard, high resource output, and strong defenses
+   - Secondary Planet: Medium-sized planet with specialized resource production
+
+2. **Neutral Planets**
+   - Nova Centrum: Large central planet with balanced high resources
+   - Resource-Specialized: Planets focusing on energy, minerals, or research
+   - Strategic Points: Planets positioned at key intersections of phase lanes
+
+3. **Starting Forces**
+   - Each player begins with a defensive fleet at their capital
+   - Fleet composition: Balanced mix of fighters, cruisers, and scouts
+
 ## Future Enhancements
-1. **Database Integration**: Add MongoDB or PostgreSQL for persistent game state
-2. **Enhanced Authentication**: Implement proper user accounts and authentication
-3. **Advanced Game Mechanics**: Add economy, research, and ship types
-4. **AI Opponents**: Add computer-controlled opponents for single-player mode
-5. **Game History**: Track game results and player statistics
+1. **Additional Map Types**: Create maps supporting 3+ players with varied layouts
+2. **Database Integration**: Add MongoDB or PostgreSQL for persistent game state
+3. **Enhanced Authentication**: Implement proper user accounts and authentication
+4. **Advanced Game Mechanics**: Add economy, research, and ship types
+5. **AI Opponents**: Add computer-controlled opponents for single-player mode
+6. **Game History**: Track game results and player statistics
 
 ## Active Deployments
 - **Client**: [https://space-strategy-game.windsurf.build](https://space-strategy-game.windsurf.build)
@@ -163,8 +189,10 @@ The game uses a simple identification system:
 The project is hosted on GitHub at: https://github.com/AlexBBIO/space-strategy-game
 
 ## Recent Improvements
-1. Fixed player identification by implementing server-side ID generation
-2. Added comprehensive command handling for client-server communication
-3. Improved error handling and debugging on both client and server
-4. Enhanced CORS configuration to allow cross-origin requests
-5. Added Render.com configuration for easy server deployment
+1. Added balanced two-player map generation with strategic planet placement
+2. Implemented proper game state handling to prevent client-side errors
+3. Fixed player identification by implementing server-side ID generation
+4. Added comprehensive command handling for client-server communication
+5. Improved error handling and debugging on both client and server
+6. Enhanced CORS configuration to allow cross-origin requests
+7. Added Render.com configuration for easy server deployment
