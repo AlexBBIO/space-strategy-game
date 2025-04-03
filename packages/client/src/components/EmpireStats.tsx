@@ -93,20 +93,24 @@ const SectionTitle = styled.h3`
 `;
 
 const EmpireStats = ({ player, gameState }: EmpireStatsProps) => {
-  if (!player) return null;
+  if (!player || !gameState) return null;
   
   // Calculate empire statistics
   const calculateEmpireStats = () => {
-    const playerPlanets = gameState.planets.filter(p => p.ownerId === player.id);
-    const playerFleets = gameState.fleets.filter(f => f.ownerId === player.id);
+    // Safely handle undefined properties
+    const planets = gameState.planets || [];
+    const fleets = gameState.fleets || [];
+    
+    const playerPlanets = planets.filter(p => p && p.ownerId === player.id);
+    const playerFleets = fleets.filter(f => f && f.ownerId === player.id);
     
     // Calculate total fleet strength
-    const totalFleetStrength = playerFleets.reduce((sum, fleet) => sum + fleet.strength, 0);
+    const totalFleetStrength = playerFleets.reduce((sum, fleet) => sum + (fleet.strength || 0), 0);
     
     // Calculate total population
-    const totalPopulation = playerFleets.reduce((sum, planet) => {
-      if (planet.ownerId === player.id) {
-        return sum + planet.population;
+    const totalPopulation = playerPlanets.reduce((sum, planet) => {
+      if (planet && planet.ownerId === player.id) {
+        return sum + (planet.population || 0);
       }
       return sum;
     }, 0);
@@ -127,13 +131,19 @@ const EmpireStats = ({ player, gameState }: EmpireStatsProps) => {
   
   // Calculate player rankings
   const calculatePlayerRankings = () => {
-    return gameState.players.map(p => {
-      const playerPlanets = gameState.planets.filter(planet => planet.ownerId === p.id);
-      const playerFleets = gameState.fleets.filter(fleet => fleet.ownerId === p.id);
+    const players = gameState.players || [];
+    const planets = gameState.planets || [];
+    const fleets = gameState.fleets || [];
+    
+    return players.map(p => {
+      if (!p || !p.id) return { player: p, planets: 0, fleets: 0, power: 0 };
+      
+      const playerPlanets = planets.filter(planet => planet && planet.ownerId === p.id);
+      const playerFleets = fleets.filter(fleet => fleet && fleet.ownerId === p.id);
       
       // Calculate total power (simple metric: planets + fleet strength)
       const planetCount = playerPlanets.length;
-      const fleetStrength = playerFleets.reduce((sum, fleet) => sum + fleet.strength, 0);
+      const fleetStrength = playerFleets.reduce((sum, fleet) => sum + (fleet.strength || 0), 0);
       const totalPower = planetCount * 10 + fleetStrength;
       
       return {
@@ -142,7 +152,7 @@ const EmpireStats = ({ player, gameState }: EmpireStatsProps) => {
         fleets: playerFleets.length,
         totalPower: Math.floor(totalPower)
       };
-    }).sort((a, b) => b.totalPower - a.totalPower); // Sort by power (descending)
+    }).sort((a, b) => (b.totalPower || 0) - (a.totalPower || 0)); // Sort by power (descending)
   };
   
   const empireStats = calculateEmpireStats();

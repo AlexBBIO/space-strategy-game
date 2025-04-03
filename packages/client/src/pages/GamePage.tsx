@@ -269,8 +269,8 @@ const GamePage = () => {
             <PlanetDetails
               planet={selectedPlanet}
               currentPlayer={player}
-              fleets={gameState.fleets.filter(f => 
-                !f.moving && f.originPlanetId === selectedPlanet.id
+              fleets={(gameState.fleets || []).filter(f => 
+                f && !f.moving && f.originPlanetId === selectedPlanet.id
               )}
               onFleetClick={handleFleetClick}
             />
