@@ -115,9 +115,9 @@ const FleetElement = styled.div<{ x: number; y: number; size: number; color: str
 `;
 
 const GalaxyMap = ({
-  planets,
-  phaseLines,
-  fleets,
+  planets = [],
+  phaseLines = [],
+  fleets = [],
   currentPlayer,
   selectedPlanet,
   selectedFleet,
@@ -295,22 +295,24 @@ const GalaxyMap = ({
   
   // Get planet color based on owner
   const getPlanetColor = (planet: Planet) => {
-    if (!planet.owner) return neutralPlanetColor;
+    if (!planet.owner || !planet.owner.color) return neutralPlanetColor;
     return planet.owner.color;
   };
   
   // Get fleet color based on owner
   const getFleetColor = (fleet: Fleet) => {
-    return fleet.owner.color;
+    return fleet.owner?.color || '#FFFFFF';
   };
   
   // Calculate planet size based on population
   const getPlanetSize = (planet: Planet) => {
+    if (!planet.population || !planet.maxPopulation) return 30; // Default size
     return 20 + (planet.population / planet.maxPopulation) * 20;
   };
   
   // Calculate fleet size based on strength
   const getFleetSize = (fleet: Fleet) => {
+    if (!fleet.strength) return 25; // Default size
     return 15 + Math.min(fleet.strength / 100, 1) * 20;
   };
   
@@ -324,14 +326,16 @@ const GalaxyMap = ({
     >
       <MapCanvas ref={canvasRef} />
       
-      {planets.map(planet => {
+      {(planets || []).map(planet => {
+        if (!planet || !planet.position) return null;
+        
         const pos = transformPoint(planet.position);
         const size = getPlanetSize(planet);
         const color = getPlanetColor(planet);
         const isSelected = selectedPlanet?.id === planet.id;
         
         return (
-          <div key={planet.id}>
+          <div key={planet.id || `planet-${Math.random()}`}>
             <PlanetElement
               x={pos.x}
               y={pos.y}
@@ -341,13 +345,15 @@ const GalaxyMap = ({
               onClick={() => handlePlanetClick(planet)}
             />
             <PlanetLabel x={pos.x} y={pos.y}>
-              {planet.name}
+              {planet.name || 'Unknown Planet'}
             </PlanetLabel>
           </div>
         );
       })}
       
-      {fleets.map(fleet => {
+      {(fleets || []).map(fleet => {
+        if (!fleet || !fleet.position || !fleet.owner) return null;
+        
         const pos = transformPoint(fleet.position);
         const size = getFleetSize(fleet);
         const color = getFleetColor(fleet);
@@ -355,7 +361,7 @@ const GalaxyMap = ({
         
         return (
           <FleetElement
-            key={fleet.id}
+            key={fleet.id || `fleet-${Math.random()}`}
             x={pos.x}
             y={pos.y}
             size={size}
