@@ -6,9 +6,9 @@ import { usePlayerStore } from '../stores/playerStore';
 const isProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
 
 // Define server URL based on environment
-// In development, connect to localhost, in production use a WebSocket-supporting service 
+// In development, connect to localhost, in production use our Render.com deployment
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 
-  (isProduction ? 'https://space-strategy-server-123.onrender.com' : 'http://localhost:3001');
+  (isProduction ? 'https://space-strategy-game-server.onrender.com' : 'http://localhost:3001');
 
 // For non-socket API requests, use this URL
 export const API_URL = isProduction ? '/.netlify/functions/game-api' : 'http://localhost:3001/api';
