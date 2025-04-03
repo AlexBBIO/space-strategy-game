@@ -93,6 +93,229 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Generate a balanced two-player map with strategic layout
+function generateTwoPlayerMap(playerIds) {
+  const [player1Id, player2Id] = playerIds;
+  
+  // Define player colors
+  const player1Color = '#FF5733'; // Orange-red for player 1
+  const player2Color = '#3498DB'; // Blue for player 2
+  
+  // Create planets array
+  const planets = [
+    // Player 1 home system
+    {
+      id: `planet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'Alpha Prime',
+      position: { x: 200, y: 200 },
+      size: 'large',
+      population: 100,
+      maxPopulation: 150,
+      resources: { energy: 50, minerals: 50 },
+      resourceOutput: { energy: 10, minerals: 10, research: 5 },
+      ownerId: player1Id,
+      owner: { id: player1Id, color: player1Color },
+      hasShipyard: true,
+      defenseLevel: 2,
+      specialFeatures: ['capital']
+    },
+    {
+      id: `planet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'Alpha Minor',
+      position: { x: 250, y: 250 },
+      size: 'medium',
+      population: 60,
+      maxPopulation: 100,
+      resources: { energy: 30, minerals: 40 },
+      resourceOutput: { energy: 7, minerals: 8, research: 2 },
+      ownerId: player1Id,
+      owner: { id: player1Id, color: player1Color },
+      hasShipyard: false,
+      defenseLevel: 1,
+      specialFeatures: []
+    },
+    
+    // Player 2 home system
+    {
+      id: `planet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'Omega Prime',
+      position: { x: 800, y: 800 },
+      size: 'large',
+      population: 100,
+      maxPopulation: 150,
+      resources: { energy: 50, minerals: 50 },
+      resourceOutput: { energy: 10, minerals: 10, research: 5 },
+      ownerId: player2Id,
+      owner: { id: player2Id, color: player2Color },
+      hasShipyard: true,
+      defenseLevel: 2,
+      specialFeatures: ['capital']
+    },
+    {
+      id: `planet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'Omega Minor',
+      position: { x: 750, y: 750 },
+      size: 'medium',
+      population: 60,
+      maxPopulation: 100,
+      resources: { energy: 40, minerals: 30 },
+      resourceOutput: { energy: 8, minerals: 7, research: 2 },
+      ownerId: player2Id,
+      owner: { id: player2Id, color: player2Color },
+      hasShipyard: false,
+      defenseLevel: 1,
+      specialFeatures: []
+    },
+    
+    // Neutral planets in the middle - rich resources but contestable
+    {
+      id: `planet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'Nova Centrum',
+      position: { x: 500, y: 500 },
+      size: 'large',
+      population: 80,
+      maxPopulation: 200,
+      resources: { energy: 100, minerals: 100 },
+      resourceOutput: { energy: 15, minerals: 15, research: 10 },
+      ownerId: null,
+      owner: null,
+      hasShipyard: false,
+      defenseLevel: 3,
+      specialFeatures: ['resource-rich', 'strategic']
+    },
+    {
+      id: `planet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'Proxima',
+      position: { x: 400, y: 600 },
+      size: 'medium',
+      population: 40,
+      maxPopulation: 120,
+      resources: { energy: 70, minerals: 40 },
+      resourceOutput: { energy: 12, minerals: 6, research: 3 },
+      ownerId: null,
+      owner: null,
+      hasShipyard: false,
+      defenseLevel: 1,
+      specialFeatures: ['energy-rich']
+    },
+    {
+      id: `planet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'Metallon',
+      position: { x: 600, y: 400 },
+      size: 'medium',
+      population: 40,
+      maxPopulation: 120,
+      resources: { energy: 40, minerals: 70 },
+      resourceOutput: { energy: 6, minerals: 12, research: 3 },
+      ownerId: null,
+      owner: null,
+      hasShipyard: false,
+      defenseLevel: 1,
+      specialFeatures: ['mineral-rich']
+    },
+    {
+      id: `planet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'Scientifica',
+      position: { x: 350, y: 350 },
+      size: 'small',
+      population: 30,
+      maxPopulation: 80,
+      resources: { energy: 30, minerals: 30 },
+      resourceOutput: { energy: 5, minerals: 5, research: 15 },
+      ownerId: null,
+      owner: null,
+      hasShipyard: false,
+      defenseLevel: 1,
+      specialFeatures: ['research-focused']
+    },
+    {
+      id: `planet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'Industria',
+      position: { x: 650, y: 650 },
+      size: 'small',
+      population: 30,
+      maxPopulation: 80,
+      resources: { energy: 30, minerals: 30 },
+      resourceOutput: { energy: 5, minerals: 5, research: 15 },
+      ownerId: null,
+      owner: null,
+      hasShipyard: false,
+      defenseLevel: 1,
+      specialFeatures: ['research-focused']
+    }
+  ];
+  
+  // Create phase lanes connecting planets
+  const phaseLanes = [
+    // Player 1 home system connections
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[0].id, planetId2: planets[1].id },
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[0].id, planetId2: planets[7].id },
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[1].id, planetId2: planets[5].id },
+    
+    // Player 2 home system connections
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[2].id, planetId2: planets[3].id },
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[2].id, planetId2: planets[8].id },
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[3].id, planetId2: planets[6].id },
+    
+    // Central connections
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[4].id, planetId2: planets[5].id },
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[4].id, planetId2: planets[6].id },
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[4].id, planetId2: planets[7].id },
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[4].id, planetId2: planets[8].id },
+    
+    // Extra strategic connections
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[5].id, planetId2: planets[6].id },
+    { id: `lane_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, planetId1: planets[7].id, planetId2: planets[8].id }
+  ];
+  
+  // Create starting fleets for each player
+  const fleets = [
+    // Player 1 starting fleet
+    {
+      id: `fleet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'Alpha Defense Fleet',
+      position: { x: planets[0].position.x, y: planets[0].position.y },
+      strength: 100,
+      speed: 5,
+      ownerId: player1Id,
+      owner: { id: player1Id, color: player1Color },
+      originPlanetId: planets[0].id,
+      destinationPlanetId: null,
+      moving: false,
+      arrivalTime: null,
+      orders: null,
+      ships: [
+        { type: 'fighter', count: 5 },
+        { type: 'cruiser', count: 2 },
+        { type: 'scout', count: 3 }
+      ]
+    },
+    
+    // Player 2 starting fleet
+    {
+      id: `fleet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: 'Omega Defense Fleet',
+      position: { x: planets[2].position.x, y: planets[2].position.y },
+      strength: 100,
+      speed: 5,
+      ownerId: player2Id,
+      owner: { id: player2Id, color: player2Color },
+      originPlanetId: planets[2].id,
+      destinationPlanetId: null,
+      moving: false,
+      arrivalTime: null,
+      orders: null,
+      ships: [
+        { type: 'fighter', count: 5 },
+        { type: 'cruiser', count: 2 },
+        { type: 'scout', count: 3 }
+      ]
+    }
+  ];
+  
+  return { planets, phaseLanes, fleets };
+}
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
@@ -188,6 +411,47 @@ io.on('connection', (socket) => {
     io.to('lobby').emit('gameCreated', game);
   });
   
+  // Start game and generate map
+  socket.on('startGame', (gameId) => {
+    if (!socket.playerId || !socket.games || !socket.games[gameId]) {
+      socket.emit('gameStarted', { success: false, error: 'Game not found' });
+      return;
+    }
+    
+    const game = socket.games[gameId];
+    
+    // Only the game creator can start the game
+    if (game.players[0].id !== socket.playerId) {
+      socket.emit('gameStarted', { success: false, error: 'Only the game creator can start the game' });
+      return;
+    }
+    
+    // Check if we have enough players
+    if (game.players.length < 2) {
+      socket.emit('gameStarted', { success: false, error: 'Need at least 2 players to start' });
+      return;
+    }
+    
+    // Generate map if it hasn't been generated yet
+    if (game.planets.length === 0) {
+      const playerIds = game.players.map(p => p.id);
+      const mapData = generateTwoPlayerMap(playerIds);
+      
+      // Update the game with map data
+      game.planets = mapData.planets;
+      game.phaseLanes = mapData.phaseLanes;
+      game.fleets = mapData.fleets;
+      game.status = 'active';
+      
+      // Save the updated game
+      socket.games[gameId] = game;
+      
+      // Notify all players in the game
+      io.to(gameId).emit('gameStarted', { success: true, gameId });
+      io.to(gameId).emit('gameState', game);
+    }
+  });
+  
   // Join game
   socket.on('joinGame', (gameId) => {
     if (socket.playerId) {
@@ -197,7 +461,13 @@ io.on('connection', (socket) => {
       // Add player to game
       const player = {
         id: socket.playerId,
-        name: socket.playerName
+        name: socket.playerName,
+        color: '#3498DB', // Blue color for second player
+        resources: { energy: 100, minerals: 100, credits: 1000 },
+        research: { military: 0, economy: 0, technology: 0 },
+        score: 0,
+        isActive: true,
+        isReady: true
       };
       
       // Broadcast to game room
