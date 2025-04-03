@@ -136,10 +136,21 @@ io.on('connection', (socket) => {
   
   // Create game
   socket.on('createGame', (data) => {
-    const gameId = `game_${Date.now()}`;
+    console.log(`Player ${socket.playerName} (${socket.playerId}) is creating a game:`, data);
+    
+    // Handle missing data
+    if (!data) {
+      console.log('Game creation received with no data');
+      data = {};
+    }
+    
+    // Generate a unique game ID
+    const gameId = `game_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    
+    // Create game object with default values if needed
     const game = {
       id: gameId,
-      name: data.gameName,
+      name: data.gameName || `${socket.playerName}'s Game`,
       host: {
         id: socket.playerId,
         name: socket.playerName
@@ -148,14 +159,25 @@ io.on('connection', (socket) => {
         id: socket.playerId,
         name: socket.playerName
       }],
-      maxPlayers: data.maxPlayers,
+      maxPlayers: data.maxPlayers || 4,
       status: 'waiting'
     };
     
+    console.log(`Game created: ${game.name} (${gameId})`);
+    
+    // Store game in memory (could be moved to database later)
+    const games = socket.games || {};
+    games[gameId] = game;
+    socket.games = games;
+    
+    // Join the game room
     socket.join(gameId);
     socket.gameId = gameId;
     
-    // Broadcast game list update
+    // Send confirmation to the creator
+    socket.emit('gameCreated', { success: true, game });
+    
+    // Broadcast game list update to all players in the lobby
     io.to('lobby').emit('gameCreated', game);
   });
   
@@ -173,6 +195,108 @@ io.on('connection', (socket) => {
       
       // Broadcast to game room
       io.to(gameId).emit('playerJoined', player);
+    }
+  });
+  
+  // Command handler for generalized client commands
+  socket.on('command', (command) => {
+    console.log(`Received command from ${socket.playerName}:`, command);
+    
+    if (!command || !command.type) {
+      socket.emit('commandResponse', {
+        success: false,
+        message: 'Invalid command format'
+      });
+      return;
+    }
+    
+    // Handle different command types
+    switch (command.type) {
+      case 'CREATE_GAME':
+        // Create a game using the command data
+        const gameId = `game_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        
+        const game = {
+          id: gameId,
+          name: command.gameName || `${socket.playerName}'s Game`,
+          host: {
+            id: socket.playerId,
+            name: socket.playerName
+          },
+          players: [{
+            id: socket.playerId,
+            name: socket.playerName
+          }],
+          maxPlayers: command.maxPlayers || 4,
+          status: 'waiting'
+        };
+        
+        console.log(`Game created via command: ${game.name} (${gameId})`);
+        
+        // Store game in memory
+        const games = socket.games || {};
+        games[gameId] = game;
+        socket.games = games;
+        
+        // Join the game room
+        socket.join(gameId);
+        socket.gameId = gameId;
+        
+        // Send confirmation to the creator
+        socket.emit('commandResponse', {
+          success: true,
+          data: game
+        });
+        
+        // Broadcast game list update to lobby
+        io.to('lobby').emit('gameCreated', game);
+        
+        // Send updated game list to everyone
+        const gameList = Object.values(games);
+        io.to('lobby').emit('gameList', gameList);
+        break;
+        
+      case 'JOIN_GAME':
+        // Handle join game command
+        if (!command.gameId) {
+          socket.emit('commandResponse', {
+            success: false,
+            message: 'Game ID is required'
+          });
+          return;
+        }
+        
+        // Join the specified game room
+        socket.join(command.gameId);
+        socket.gameId = command.gameId;
+        
+        // Add player to the game
+        const player = {
+          id: socket.playerId,
+          name: socket.playerName
+        };
+        
+        // Broadcast to game room
+        io.to(command.gameId).emit('playerJoined', player);
+        
+        // Send success response to player
+        socket.emit('commandResponse', {
+          success: true,
+          data: { id: command.gameId }
+        });
+        break;
+        
+      case 'GET_GAME_LIST':
+        // Send current list of games
+        const allGames = Object.values(socket.games || {});
+        socket.emit('gameList', allGames);
+        break;
+        
+      default:
+        socket.emit('commandResponse', {
+          success: false,
+          message: `Unknown command type: ${command.type}`
+        });
     }
   });
   
