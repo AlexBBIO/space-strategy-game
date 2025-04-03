@@ -214,7 +214,7 @@ io.on('connection', (socket) => {
     const game = games[gameId];
     
     if (!game) {
-      // If game doesn't exist, create a dummy game state
+      // If game doesn't exist, create a dummy game state with all required properties
       const emptyGameState = {
         id: gameId,
         name: 'New Game',
@@ -222,14 +222,30 @@ io.on('connection', (socket) => {
           {
             id: socket.playerId,
             name: socket.playerName,
-            color: '#FF5733'
+            color: '#FF5733',
+            resources: { energy: 100, minerals: 100, credits: 1000 },
+            research: { military: 0, economy: 0, technology: 0 },
+            score: 0,
+            isActive: true,
+            isReady: true
           }
         ],
         planets: [],
         fleets: [],
-        phaseLines: [],
+        phaseLanes: [], // Corrected property name from phaseLines to phaseLanes
         turn: 0,
-        status: 'waiting'
+        status: 'waiting',
+        winner: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        settings: {
+          mapSize: 'medium',
+          resources: 'standard',
+          startingFleets: 1,
+          winCondition: 'conquest'
+        },
+        messages: [],
+        activePlayerId: socket.playerId // Set the active player to the creator
       };
       
       // Store the game for future reference
