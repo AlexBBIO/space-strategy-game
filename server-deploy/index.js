@@ -531,10 +531,10 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Check if we need to generate a map (if there are 2+ players but no planets yet)
-    if (game.players.length >= 2 && (!game.planets || game.planets.length === 0)) {
-      // Generate a balanced map for 2 players
-      console.log(`Generating map for 2-player game ${gameId} with ${game.players.length} players`);
+    // Generate map immediately for the first player
+    if (!game.planets || game.planets.length === 0) {
+      // Generate a balanced map with the first player
+      console.log(`Generating immediate map for game ${gameId} with player ${socket.playerName}`);
       
       const playerIds = game.players.map(p => p.id);
       const mapData = generateTwoPlayerMap(playerIds);
