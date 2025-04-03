@@ -97,6 +97,13 @@ app.use((err, req, res, next) => {
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
   
+  // Heartbeat handler to keep connections alive
+  socket.on('heartbeat', (data) => {
+    // Just respond with an acknowledgement
+    // console.log(`Heartbeat received from ${socket.playerName || socket.id}`); // Uncomment for debugging
+    socket.emit('heartbeat-ack', { timestamp: Date.now() });
+  });
+  
   // Player identification
   socket.on('identify', (data) => {
     // Always generate a new server-side playerId regardless of what client sent

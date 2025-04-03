@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { usePlayerStore } from '../stores/playerStore';
 
@@ -37,20 +37,36 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isConnected, setIsConnected] = useState(false);
   const [isDemo] = useState(useDemo);
   const { player } = usePlayerStore();
+  const socketRef = useRef<Socket | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 5;
+  const reconnectionDelayRef = useRef(2000);
 
   useEffect(() => {
-    // Initialize socket connection
+    // Don't create a connection if we're in demo mode
+    if (isDemo) {
+      console.log('Running in demo mode, skipping socket connection');
+      return;
+    }
+    
+    // Initialize socket connection with more robust config
     const socketInstance = io(SERVER_URL, {
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
+      reconnectionAttempts: maxReconnectAttempts,
+      reconnectionDelay: reconnectionDelayRef.current,
+      timeout: 10000, // 10 second connection timeout
+      transports: ['websocket', 'polling'],
     });
+    
+    socketRef.current = socketInstance;
 
     // Socket event handlers
     socketInstance.on('connect', () => {
       console.log('Socket connected!');
       setIsConnected(true);
+      reconnectAttemptsRef.current = 0;
+      reconnectionDelayRef.current = 2000; // Reset delay on successful connection
       
       // Identify player if available
       if (player) {
@@ -92,24 +108,58 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return colors[Math.floor(Math.random() * colors.length)];
     }
 
-    socketInstance.on('disconnect', () => {
-      console.log('Socket disconnected!');
+    socketInstance.on('disconnect', (reason) => {
+      console.log('Socket disconnected! Reason:', reason);
       setIsConnected(false);
+      
+      // If the server disconnected us, try to reconnect manually
+      if (reason === 'io server disconnect') {
+        console.log('Server disconnected us, attempting to reconnect...');
+        socketInstance.connect();
+      }
     });
 
     socketInstance.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
       setIsConnected(false);
+      
+      reconnectAttemptsRef.current += 1;
+      console.log(`Connection attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts} failed`);      
+      
+      // Implement exponential backoff for reconnection
+      reconnectionDelayRef.current = Math.min(reconnectionDelayRef.current * 1.5, 10000); // Cap at 10 seconds
+      
+      if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+        console.error(`Failed to connect after ${maxReconnectAttempts} attempts`);
+        // Don't try to reconnect automatically anymore
+        socketInstance.disconnect();
+      }
+    });
+    
+    // Add error handler
+    socketInstance.on('error', (error) => {
+      console.error('Socket error:', error);
     });
 
     // Set the socket in state
     setSocket(socketInstance);
+    
+    // Add heartbeat to keep connection alive
+    const heartbeatInterval = setInterval(() => {
+      if (socketInstance.connected) {
+        console.log('Sending heartbeat...');
+        socketInstance.emit('heartbeat', { timestamp: Date.now() });
+      }
+    }, 30000); // 30 second heartbeat interval
 
     // Cleanup on unmount
     return () => {
+      console.log('Cleaning up socket connection...');
+      clearInterval(heartbeatInterval);
       socketInstance.disconnect();
+      socketRef.current = null;
     };
-  }, [player]);
+  }, [isDemo]); // Only recreate socket if demo mode changes, not on player changes
 
   return (
     <SocketContext.Provider value={{ socket, isConnected, isDemo }}>
