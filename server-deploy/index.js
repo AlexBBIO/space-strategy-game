@@ -531,9 +531,33 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Return the game state to the client
-    console.log(`Sending game state for ${gameId}`);
-    socket.emit('gameState', game);
+    // Check if we need to generate a map (if there are 2+ players but no planets yet)
+    if (game.players.length >= 2 && (!game.planets || game.planets.length === 0)) {
+      // Generate a balanced map for 2 players
+      console.log(`Generating map for 2-player game ${gameId} with ${game.players.length} players`);
+      
+      const playerIds = game.players.map(p => p.id);
+      const mapData = generateTwoPlayerMap(playerIds);
+      
+      // Update the game with map data
+      game.planets = mapData.planets;
+      game.phaseLanes = mapData.phaseLanes;
+      game.fleets = mapData.fleets;
+      game.status = 'active';
+      
+      console.log(`Map generated for game ${gameId} with ${game.planets.length} planets and ${game.fleets.length} fleets`);
+      
+      // Save the updated game
+      games[gameId] = game;
+      socket.games = games;
+      
+      // Broadcast the updated game state to all players in the game
+      io.to(gameId).emit('gameState', game);
+    } else {
+      // Return the existing game state to the client
+      console.log(`Sending existing game state for ${gameId}`);
+      socket.emit('gameState', game);
+    }
   });
   
   // Command handler for generalized client commands
