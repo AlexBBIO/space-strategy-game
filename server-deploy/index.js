@@ -99,25 +99,25 @@ io.on('connection', (socket) => {
   
   // Player identification
   socket.on('identify', (data) => {
-    // Generate a playerId if none is provided
-    const playerId = data.playerId || `server_player_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    // Always generate a new server-side playerId regardless of what client sent
+    const playerId = `server_player_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const playerName = data.playerName || `Player_${playerId.substring(0, 5)}`;
     
-    console.log(`Player identified: ${playerName} (${playerId})`);
+    console.log(`Player identified: ${playerName} with new ID: ${playerId}`);
     
     // Store player info on the socket
     socket.playerId = playerId;
     socket.playerName = playerName;
     
-    // Send confirmation to the client with their ID
+    // Send confirmation to the client with the new guaranteed ID
     socket.emit('identifyConfirm', { 
       playerId: playerId,
       playerName: playerName,
       success: true,
-      message: 'Successfully connected to server'
+      message: 'Successfully connected to server with new ID'
     });
     
-    // Join lobby
+    // Join lobby right away
     socket.join('lobby');
     
     // Broadcast player list to lobby
