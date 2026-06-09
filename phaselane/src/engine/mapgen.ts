@@ -53,6 +53,7 @@ export function createGame(seed: number, opts: GameOptions = {}): GameState {
           owner: -1,
           shield: shieldMax,
           shieldMax,
+          guard: 0,
         });
         placed = true;
       }
@@ -129,6 +130,7 @@ export function createGame(seed: number, opts: GameOptions = {}): GameState {
     home.owner = i;
     if (home.size < 2) home.size = 2;
     home.shield = 12;
+    home.guard = C.START_BALANCE;
   }
 
   return {

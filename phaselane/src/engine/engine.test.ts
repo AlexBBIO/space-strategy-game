@@ -54,7 +54,7 @@ describe('combat', () => {
     const target = state.planets.find(
       p => p.owner === -1 && isAttackable(state, 0, p.id),
     )!;
-    state.factions[0].balance = 500;
+    state.planets.find(p => p.owner === 0)!.guard = 500;
     step(state, [{ type: 'attack', faction: 0, target: target.id, fraction: 0.5 }]);
     expect(target.owner).toBe(-1); // not instant
     let ticks = 0;
@@ -69,7 +69,7 @@ describe('combat', () => {
   it('launches from the requested planet when valid', () => {
     const state = createGame(21);
     for (const f of state.factions) f.nextThinkAt = Infinity; // freeze bots
-    state.factions[0].balance = 500;
+    state.planets.find(p => p.owner === 0)!.guard = 500;
     // Capture two neutrals so a target can have multiple owned neighbors.
     const home = state.planets.findIndex(p => p.owner === 0);
     const first = state.planets[home].neighbors[0];
@@ -91,7 +91,7 @@ describe('combat', () => {
     const target = state.planets.find(
       p => p.owner === -1 && isAttackable(state, 0, p.id),
     )!;
-    state.factions[0].balance = 12; // commits ~6 against a 22+ shield
+    state.planets.find(p => p.owner === 0)!.guard = 12; // commits ~6 vs a 30+ shield
     step(state, [{ type: 'attack', faction: 0, target: target.id, fraction: 0.5 }]);
     for (let i = 0; i < 600; i++) step(state);
     expect(target.owner).toBe(-1);

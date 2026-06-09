@@ -179,10 +179,11 @@ export function draw(
       ctx.fill();
     }
 
+    // The number is the planet's whole defense: garrison + shield.
     const contested = contestedSet.has(p.id);
     ctx.font = '10px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = contested ? '#ff9a9a' : 'rgba(170,185,210,0.85)';
-    ctx.fillText(String(Math.max(0, Math.ceil(p.shield))), x, y + r + 12);
+    ctx.fillText(String(Math.max(0, Math.ceil(p.shield + p.guard))), x, y + r + 12);
   }
 }

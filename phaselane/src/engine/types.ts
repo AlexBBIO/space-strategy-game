@@ -12,6 +12,13 @@ export interface PlanetState {
   owner: number;
   shield: number;
   shieldMax: number;
+  /**
+   * The owner's Power stationed here. A faction's total Power is the sum of
+   * its garrisons; garrisons continuously equalize toward the empire mean,
+   * so defense is evenly distributed — and visible — planet by planet.
+   * Always 0 for neutral planets (their defense is the shield).
+   */
+  guard: number;
 }
 
 export interface Faction {
@@ -19,6 +26,7 @@ export interface Faction {
   name: string;
   color: string;
   isPlayer: boolean;
+  /** Cached total Power (sum of garrisons), refreshed every tick. */
   balance: number;
   alive: boolean;
   /** Sim time at which this bot next evaluates the board. */

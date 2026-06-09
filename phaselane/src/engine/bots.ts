@@ -40,7 +40,8 @@ function think(state: GameState, fid: number): Command | null {
       if (t.owner < 0) {
         if (t.shield < bestNeutralCost) { bestNeutral = t.id; bestNeutralCost = t.shield; }
       } else {
-        const cost = t.shield + state.factions[t.owner].balance * 0.4;
+        // Defense is now visible on the planet itself: garrison + shield.
+        const cost = (t.shield + t.guard) * 1.6;
         if (cost < bestEnemyCost) { bestEnemy = t.id; bestEnemyCost = cost; }
       }
     }

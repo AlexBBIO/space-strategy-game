@@ -73,28 +73,36 @@ can hold cheaply and **fronts** with actual shape.
 
 ### 5.1 Power, income, and interest
 
-Each faction has a single **Power** balance.
+Each faction has a single **Power** total — but it is physically *stationed*: every owned
+planet holds a **garrison**, and your Power is their sum.
 
-- **Income:** each owned planet adds income per second (base 1/s; specials below modify this).
-- **Interest:** banked Power earns ~+1%/s, **capped** at a multiple of your income (so a giant
-  bank can't grow forever without territory — territorial.io's anti-turtle rule, kept verbatim
-  as a starting point).
-- Power is spent only on attacks. No builds, no upkeep, no second currency.
+- **Income:** each owned planet adds income per second into its own garrison (base 1/s;
+  specials below modify this).
+- **Interest:** total Power earns ~+1%/s, **capped** at a multiple of your income (so a giant
+  bank can't grow forever without territory — territorial.io's anti-turtle rule).
+- **Garrisons continuously equalize toward the empire mean** (a tunable flow rate, ~τ7s). This
+  makes defense evenly distributed, *visible on every planet*, and self-balancing — with no
+  unit micromanagement. Sprawl thins your garrisons; compactness thickens them.
+- Power is spent only on attacks: a commitment musters proportionally from every garrison, so
+  attacking thins your defense everywhere. No builds, no upkeep, no second currency.
 
 ### 5.2 Attacking and capturing
 
 - You may target any planet **adjacent to your territory** (one lane from a planet you own).
 - **The slider** (10–100%) sets how much of your current balance you commit. The committed
   Power leaves your balance immediately and becomes an **attack front** on that lane.
-- The front grinds against the planet's **Defense** as damage-over-time — **combat is never
-  instant**. Duration scales inversely with overkill: crushing force resolves in ~1–2s, an even
-  fight grinds for 5–10s (tuning knobs). The grind is load-bearing in three ways: it's the
-  defender's reaction window (respond economically — hold, or counter-punch the attacker while
-  their balance is spent down), it's what makes multi-front collapses and pile-ons possible,
-  and it's the visible drama on the map.
-  - *Neutral planets:* fixed garrison by planet size. Predictable, cheap, early-game food.
-  - *Owned planets:* defense drains from the owner's balance automatically at a **defender's
-    multiplier** (~1.5× efficiency, tuning knob), plus the planet's own defense bonus.
+- The front grinds against the planet's **Defense** (its garrison, then its shield) as
+  damage-over-time — **combat is never instant**, and it is **local**: reinforcements arrive
+  only through the garrison-equalization flow. That creates the core tactical split:
+  **alpha-strike** a planet before help flows in, or **siege** it and bleed the whole empire
+  through one wound. The grind is also the defender's reaction window (counter-punch while the
+  attacker's garrisons are thinned), the enabler of multi-front pile-ons, and the visible
+  drama on the map. The attacker pays an **exchange rate** per point of damage dealt
+  (defender's advantage on owned planets — tuning knob).
+  - *Neutral planets:* fixed shield by planet size. Predictable, cheap, early-game food.
+  - *Owned planets:* garrison + shield, both visible — the number on the planet IS the price.
+  - *On capture, surviving attackers garrison the conquest* (fresh conquests are briefly
+    strong, then equalize).
 - While a front is grinding, the attacker may **reinforce it** with further commitments (the
   slider again). Drip 30% and top up if it stalls, or send 70% up front — that recurring
   bet-sizing decision is the combat system's core skill.

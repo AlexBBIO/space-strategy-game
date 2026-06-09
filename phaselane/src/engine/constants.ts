@@ -22,11 +22,11 @@ export const GRIND_RATE = 0.25;
 export const EXCHANGE_OWNED = 1.3;
 export const EXCHANGE_NEUTRAL = 0.9;
 /**
- * Share of damage that always reaches the shield even while the defender is
- * solvent. Without this leakage a planet can only fall once its owner is
- * fully bankrupt, and games stalemate forever.
+ * How fast garrisons equalize toward the empire mean, per second. This sets
+ * the alpha-strike window: overwhelm a planet faster than reinforcements
+ * flow in, or settle in to bleed the whole empire through one front.
  */
-export const SIEGE_SHIELD_FRAC = 0.5;
+export const REBALANCE_RATE = 0.15;
 /** Shield regen per second when not under attack. */
 export const SHIELD_REGEN = 2.0;
 /** Shield a planet flips with, as a fraction of its max. */
