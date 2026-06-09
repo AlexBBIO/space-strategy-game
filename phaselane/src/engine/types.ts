@@ -64,6 +64,9 @@ export interface AttackCommand {
   target: number;
   /** Fraction of current balance to commit (0.05–1). */
   fraction: number;
+  /** Preferred launch planet; must be an owned neighbor of the target.
+   * Cosmetic (Power is empire-wide) but controls which lane the front uses. */
+  from?: number;
 }
 
 export type Command = AttackCommand;

@@ -146,8 +146,11 @@ export function draw(
     ctx.fill();
 
     if (attackable.has(p.id)) {
-      ctx.strokeStyle = hover === p.id ? '#ffffff' : 'rgba(255,255,255,0.45)';
-      ctx.lineWidth = hover === p.id ? 2 : 1;
+      const fromSelected =
+        selected !== null && state.planets[selected].neighbors.includes(p.id);
+      ctx.strokeStyle =
+        hover === p.id ? '#ffffff' : fromSelected ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)';
+      ctx.lineWidth = hover === p.id || fromSelected ? 2 : 1;
       ctx.setLineDash([4, 3]);
       ctx.beginPath();
       ctx.arc(x, y, r + 4.5, 0, Math.PI * 2);

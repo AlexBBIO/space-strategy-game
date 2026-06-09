@@ -66,6 +66,25 @@ describe('combat', () => {
     expect(ticks).toBeGreaterThan(2); // the grind takes real time
   });
 
+  it('launches from the requested planet when valid', () => {
+    const state = createGame(21);
+    for (const f of state.factions) f.nextThinkAt = Infinity; // freeze bots
+    state.factions[0].balance = 500;
+    // Capture two neutrals so a target can have multiple owned neighbors.
+    const home = state.planets.findIndex(p => p.owner === 0);
+    const first = state.planets[home].neighbors[0];
+    step(state, [{ type: 'attack', faction: 0, target: first, fraction: 0.3 }]);
+    for (let i = 0; i < 600 && state.planets[first].owner !== 0; i++) step(state);
+    expect(state.planets[first].owner).toBe(0);
+    // Attack a planet adjacent to `first`, explicitly launching from it.
+    const target = state.planets[first].neighbors.find(
+      n => state.planets[n].owner !== 0,
+    )!;
+    step(state, [{ type: 'attack', faction: 0, target, fraction: 0.3, from: first }]);
+    const front = state.fronts.find(fr => fr.faction === 0 && fr.target === target)!;
+    expect(front.from).toBe(first);
+  });
+
   it('repels an underpowered attack and keeps the planet', () => {
     const state = createGame(11);
     for (const f of state.factions) f.nextThinkAt = Infinity; // freeze bots

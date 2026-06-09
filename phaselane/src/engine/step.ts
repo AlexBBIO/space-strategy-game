@@ -71,7 +71,28 @@ function applyAttack(state: GameState, cmd: Command): void {
   if (!f || !f.alive) return;
   const p = state.planets[cmd.target];
   if (!p || p.owner === cmd.faction) return;
-  const from = p.neighbors.find(n => state.planets[n].owner === cmd.faction);
+
+  // Launch from the requested planet when valid, else the nearest owned
+  // neighbor of the target.
+  let from: number | undefined;
+  if (
+    cmd.from !== undefined &&
+    state.planets[cmd.from]?.owner === cmd.faction &&
+    p.neighbors.includes(cmd.from)
+  ) {
+    from = cmd.from;
+  } else {
+    let bestD = Infinity;
+    for (const n of p.neighbors) {
+      const q = state.planets[n];
+      if (q.owner !== cmd.faction) continue;
+      const d = Math.hypot(q.pos.x - p.pos.x, q.pos.y - p.pos.y);
+      if (d < bestD) {
+        bestD = d;
+        from = n;
+      }
+    }
+  }
   if (from === undefined) return;
 
   const fraction = Math.min(1, Math.max(0.05, cmd.fraction));
@@ -79,10 +100,12 @@ function applyAttack(state: GameState, cmd: Command): void {
   if (commit < C.MIN_COMMIT) return;
   f.balance -= commit;
 
-  // Attacking a planet you already have a front on reinforces it.
+  // Attacking a planet you already have a front on reinforces it; an
+  // explicit launch planet also re-routes the lane the front is shown on.
   const existing = state.fronts.find(fr => fr.faction === cmd.faction && fr.target === cmd.target);
   if (existing) {
     existing.power += commit;
+    if (cmd.from !== undefined && from === cmd.from) existing.from = from;
   } else {
     state.fronts.push({ id: state.nextFrontId++, faction: cmd.faction, from, target: cmd.target, power: commit });
   }

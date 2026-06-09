@@ -179,7 +179,13 @@ export function Game({ seed, onExit }: { seed: number; onExit: () => void }) {
     }
     if (state.winner !== null || !state.factions[0].alive) return;
     if (!isAttackable(state, 0, id)) return;
-    queueRef.current.push({ type: 'attack', faction: 0, target: id, fraction: fractionRef.current });
+    queueRef.current.push({
+      type: 'attack',
+      faction: 0,
+      target: id,
+      fraction: fractionRef.current,
+      from: selectedRef.current ?? undefined,
+    });
   };
 
   const onMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
