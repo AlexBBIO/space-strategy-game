@@ -21,4 +21,9 @@ if (html.includes('assets/')) {
 
 const out = join(dist, 'phaselane.html');
 writeFileSync(out, html);
-console.log(`wrote ${out} (${(html.length / 1024).toFixed(0)} KB)`);
+// Also serve the inlined build as the site itself: GitHub Pages caches HTML
+// for ~10 minutes while deploys delete old hashed assets, so an index.html
+// that references external bundles goes blank for returning visitors right
+// after every deploy. A self-contained index can never dangle.
+writeFileSync(join(dist, 'index.html'), html);
+console.log(`wrote ${out} and index.html (${(html.length / 1024).toFixed(0)} KB each)`);
