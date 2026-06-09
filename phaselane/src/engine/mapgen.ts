@@ -129,7 +129,7 @@ export function createGame(seed: number, opts: GameOptions = {}): GameState {
     });
     const home = planets[spawns[i]];
     home.owner = i;
-    if (home.size < 2) home.size = 2;
+    home.size = 2; // identical spawns — no income luck
     home.shield = 12;
     home.guard = C.START_BALANCE;
   }
