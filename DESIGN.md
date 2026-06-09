@@ -80,9 +80,11 @@ planet holds a **garrison**, and your Power is their sum.
   specials below modify this).
 - **Interest:** total Power earns ~+1%/s, **capped** at a multiple of your income (so a giant
   bank can't grow forever without territory — territorial.io's anti-turtle rule).
-- **Garrisons continuously equalize toward the empire mean** (a tunable flow rate, ~τ7s). This
-  makes defense evenly distributed, *visible on every planet*, and self-balancing — with no
-  unit micromanagement. Sprawl thins your garrisons; compactness thickens them.
+- **Garrisons continuously equalize toward priority-weighted targets** (a tunable flow rate;
+  capture triggers an instant redeploy). Defense is auto-distributed, *visible on every
+  planet*, and self-balancing. Each planet has a **garrison priority slider** (×0.5–×3) — a
+  stance the flow honors, not unit orders: fortify a chokepoint, strip a backwater. Sprawl
+  thins your garrisons; compactness thickens them.
 - Power is spent only on attacks: a commitment musters proportionally from every garrison, so
   attacking thins your defense everywhere. No builds, no upkeep, no second currency.
 
