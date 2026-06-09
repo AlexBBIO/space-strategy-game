@@ -24,6 +24,7 @@ interface Inspect {
   income: number;
   guard: number;
   shield: number;
+  priority: number;
   estCost: number | null;
   underAttack: boolean;
 }
@@ -55,6 +56,7 @@ function inspectInfo(state: GameState, id: number | null): Inspect | null {
     income: INCOME_BY_SIZE[p.size],
     guard: Math.max(0, Math.ceil(p.guard)),
     shield: Math.max(0, Math.ceil(p.shield)),
+    priority: p.priority,
     estCost: isAttackable(state, 0, id) ? Math.ceil(estimateAttackCost(state, 0, id)) : null,
     underAttack: state.fronts.some(fr => fr.target === id),
   };
@@ -199,7 +201,13 @@ export function Game({ seed, onExit }: { seed: number; onExit: () => void }) {
 
   return (
     <div className="game">
-      <canvas ref={canvasRef} className="map" onClick={onClick} onMouseMove={onMove} />
+      <canvas
+        ref={canvasRef}
+        className="map"
+        onClick={onClick}
+        onMouseMove={onMove}
+        onMouseLeave={() => (hoverRef.current = null)}
+      />
 
       <div className="topbar">
         <span className="stat power">⚡ {Math.floor(hud.balance)}</span>
@@ -249,6 +257,27 @@ export function Game({ seed, onExit }: { seed: number; onExit: () => void }) {
             <div className="line cost">Attack cost ≈ {hud.inspect.estCost} ⚡ — click to attack</div>
           )}
           {hud.inspect.underAttack && <div className="line war">⚔ Under attack</div>}
+          {hud.inspect.isYours && (
+            <div className="line priority">
+              <span>Garrison priority ×{hud.inspect.priority.toFixed(1)}</span>
+              <input
+                type="range"
+                min={50}
+                max={300}
+                step={25}
+                value={Math.round(hud.inspect.priority * 100)}
+                onChange={e => {
+                  const id = hud.inspect!.id;
+                  queueRef.current.push({
+                    type: 'priority',
+                    faction: 0,
+                    planet: id,
+                    priority: Number(e.target.value) / 100,
+                  });
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 

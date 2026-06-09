@@ -1,6 +1,6 @@
 import * as C from './constants';
 import { botCommands } from './bots';
-import { Command, Front, GameState } from './types';
+import { AttackCommand, Command, Front, GameState, PriorityCommand } from './types';
 
 export function factionIncome(state: GameState, fid: number): number {
   let income = 0;
@@ -53,11 +53,14 @@ export function step(state: GameState, playerCommands: Command[] = []): void {
   state.time += C.DT;
 
   const commands = playerCommands.concat(botCommands(state));
-  for (const cmd of commands) applyAttack(state, cmd);
+  for (const cmd of commands) {
+    if (cmd.type === 'attack') applyAttack(state, cmd);
+    else if (cmd.type === 'priority') applyPriority(state, cmd);
+  }
 
   // Economy: income lands on each planet, interest spreads evenly, then
-  // garrisons equalize toward the empire mean (conserving the total) — this
-  // flow is how reinforcements reach a besieged planet.
+  // garrisons equalize toward priority-weighted targets (conserving the
+  // total) — this flow is how reinforcements reach a besieged planet.
   for (const f of state.factions) {
     if (!f.alive) continue;
     const owned = state.planets.filter(p => p.owner === f.id);
@@ -65,8 +68,12 @@ export function step(state: GameState, playerCommands: Command[] = []): void {
     for (const p of owned) p.guard += C.INCOME_BY_SIZE[p.size] * C.DT;
     const interest = factionInterest(state, f.id) * C.DT;
     for (const p of owned) p.guard += interest / owned.length;
-    const mean = owned.reduce((s, p) => s + p.guard, 0) / owned.length;
-    for (const p of owned) p.guard += (mean - p.guard) * C.REBALANCE_RATE * C.DT;
+    const total = owned.reduce((s, p) => s + p.guard, 0);
+    const totalW = owned.reduce((s, p) => s + p.priority, 0);
+    for (const p of owned) {
+      const target = total * (p.priority / totalW);
+      p.guard += (target - p.guard) * C.REBALANCE_RATE * C.DT;
+    }
   }
 
   for (const front of state.fronts.slice()) grind(state, front);
@@ -88,7 +95,13 @@ export function step(state: GameState, playerCommands: Command[] = []): void {
   checkWinner(state);
 }
 
-function applyAttack(state: GameState, cmd: Command): void {
+function applyPriority(state: GameState, cmd: PriorityCommand): void {
+  const p = state.planets[cmd.planet];
+  if (!p || p.owner !== cmd.faction) return;
+  p.priority = Math.min(4, Math.max(0.25, cmd.priority));
+}
+
+function applyAttack(state: GameState, cmd: AttackCommand): void {
   const f = state.factions[cmd.faction];
   if (!f || !f.alive) return;
   const p = state.planets[cmd.target];
@@ -179,12 +192,15 @@ function grind(state: GameState, front: Front): void {
     p.owner = front.faction;
     p.shield = Math.max(5, p.shieldMax * C.CAPTURE_SHIELD_FRAC);
     p.guard = front.power;
+    p.priority = 1; // stances don't transfer with conquest
     removeFront(state, front);
-    // Victory redeploy: the empire's garrisons immediately re-spread evenly,
-    // so a conquest doesn't leave the survivors piled on one planet.
+    // Victory redeploy: the empire's garrisons immediately re-spread to
+    // their priority-weighted targets, so a conquest doesn't leave the
+    // survivors piled on one planet.
     const owned = state.planets.filter(q => q.owner === front.faction);
-    const mean = owned.reduce((s, q) => s + q.guard, 0) / owned.length;
-    for (const q of owned) q.guard = mean;
+    const total = owned.reduce((s, q) => s + q.guard, 0);
+    const totalW = owned.reduce((s, q) => s + q.priority, 0);
+    for (const q of owned) q.guard = total * (q.priority / totalW);
   }
 }
 

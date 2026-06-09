@@ -232,6 +232,18 @@ input {
   color: #ff9a9a;
 }
 
+.inspector .line.priority {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.inspector .line.priority input[type='range'] {
+  width: 100%;
+  padding: 0;
+}
+
 .events {
   position: absolute;
   left: 12px;

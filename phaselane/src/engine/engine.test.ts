@@ -99,6 +99,29 @@ describe('combat', () => {
   });
 });
 
+describe('garrison priority', () => {
+  it('draws extra garrison to a fortified planet and conserves the total', () => {
+    const state = createGame(33);
+    for (const f of state.factions) f.nextThinkAt = Infinity; // freeze bots
+    const home = state.planets.find(p => p.owner === 0)!;
+    // Capture a neutral so the player has two planets.
+    const target = state.planets.find(
+      p => p.owner === -1 && isAttackable(state, 0, p.id),
+    )!;
+    home.guard = 300;
+    step(state, [{ type: 'attack', faction: 0, target: target.id, fraction: 0.5 }]);
+    let ticks = 0;
+    while (target.owner !== 0 && ticks++ < 600) step(state);
+    expect(target.owner).toBe(0);
+
+    step(state, [{ type: 'priority', faction: 0, planet: target.id, priority: 3 }]);
+    for (let i = 0; i < 300; i++) step(state); // 30s to settle
+    // Fortified planet should hold roughly 3x the home garrison.
+    expect(target.guard).toBeGreaterThan(home.guard * 2);
+    expect(state.factions[0].balance).toBeCloseTo(home.guard + target.guard, 0);
+  });
+});
+
 describe('full game', () => {
   it('bots play to a conclusion', () => {
     const state = createGame(2026);

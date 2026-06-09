@@ -54,6 +54,7 @@ export function createGame(seed: number, opts: GameOptions = {}): GameState {
           shield: shieldMax,
           shieldMax,
           guard: 0,
+          priority: 1,
         });
         placed = true;
       }

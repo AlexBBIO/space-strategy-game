@@ -14,11 +14,17 @@ export interface PlanetState {
   shieldMax: number;
   /**
    * The owner's Power stationed here. A faction's total Power is the sum of
-   * its garrisons; garrisons continuously equalize toward the empire mean,
-   * so defense is evenly distributed — and visible — planet by planet.
+   * its garrisons; garrisons continuously equalize toward priority-weighted
+   * targets, so defense is auto-distributed — and visible — planet by planet.
    * Always 0 for neutral planets (their defense is the shield).
    */
   guard: number;
+  /**
+   * Garrison priority (owner-set stance, default 1). The equalization flow
+   * targets total × priority/Σpriorities — dial a planet up to fortify it,
+   * down to strip it. A stance, not unit orders: no troops to move by hand.
+   */
+  priority: number;
 }
 
 export interface Faction {
@@ -77,4 +83,12 @@ export interface AttackCommand {
   from?: number;
 }
 
-export type Command = AttackCommand;
+export interface PriorityCommand {
+  type: 'priority';
+  faction: number;
+  planet: number;
+  /** Garrison priority, clamped to 0.25–4. */
+  priority: number;
+}
+
+export type Command = AttackCommand | PriorityCommand;

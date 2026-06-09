@@ -184,9 +184,10 @@ export function draw(
     const contested = contestedSet.has(p.id);
     const mine = p.owner === 0;
     const value = mine ? p.guard : p.shield + p.guard;
+    const stance = mine && p.priority > 1 ? '▲' : mine && p.priority < 1 ? '▼' : '';
     ctx.font = '10px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = contested ? '#ff9a9a' : mine ? '#ffd76a' : 'rgba(170,185,210,0.85)';
-    ctx.fillText(String(Math.max(0, Math.ceil(value))), x, y + r + 12);
+    ctx.fillText(String(Math.max(0, Math.ceil(value))) + stance, x, y + r + 12);
   }
 }
