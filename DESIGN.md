@@ -94,6 +94,12 @@ Each faction has a single **Power** balance.
   balance. Front exhausted first → attack fails; the defender keeps the planet and the scar.
 - Multiple fronts may exist at once (including several factions attacking the same target —
   feeding frenzies around dying factions are a feature).
+- **Fronts are irrevocable and non-interceptable.** This is load-bearing, not an omission:
+  fleet-based lane games degenerate into endless fleet-chasing because offense is a movable
+  piece and defense means physically intercepting it. Here, offense is a committed bet against
+  a fixed place and defense is automatic from the balance — there is nothing to chase and no
+  way to dodge. Any future mechanic that lets a front be recalled, redirected, or intercepted
+  reintroduces the chase and should be rejected on sight.
 - Capturing a faction's **last planet eliminates it**; nearby vultures race for the corpse's
   former territory (it reverts to weakly-garrisoned neutral).
 
@@ -212,7 +218,8 @@ hotseat-on-one-map experiments; lockstep online prototype.*
 2. **Defender's multiplier** (1.5×?) and whether defense drain can bankrupt a defender fighting
    on two fronts — the multi-front collapse is dramatic but may be too punishing.
 3. **Attack travel time** — instant pressure (pure territorial.io) vs. visible travel along the
-   lane (2–3s, more readable and more space-y). Leaning travel; needs feel-testing.
+   lane (2–3s, more readable and more space-y). Leaning travel; needs feel-testing. Either way,
+   travel is cosmetic only — in-flight fronts can never be intercepted or recalled (see 5.2).
 4. **Map size vs. bot count** — 60 planets/10 bots plays tight and fast; 90/16 plays epic.
 5. **65% domination threshold** — high enough to feel earned, low enough to skip the mop-up?
 6. **Vulture rule** — does a dead faction's land revert to neutral (race to grab) or transfer
