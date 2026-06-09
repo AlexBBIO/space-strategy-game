@@ -1,6 +1,8 @@
 # PHASELANE — Design Document (v2 reboot)
 
-*A quick, readable, turn-based space strategy game. A full game in 20 minutes, playable alone in a browser tab, with real decisions every turn.*
+*Territorial.io in space. A real-time galactic land-grab against a crowd of AI factions: one
+resource, one slider, ten minutes of expanding, banking, backstabbing, and snowballing — playable
+alone in a browser tab the moment it loads.*
 
 > This document replaces the design implied by `SPECIFICATION.md`, which describes the legacy
 > real-time multiplayer prototype. The legacy doc is kept for reference; nothing in it is binding.
@@ -15,157 +17,142 @@ Before designing v2, an honest accounting of v1 (the code in this repo):
    simultaneous humans connected through Netlify + Render free tiers. You couldn't even playtest
    it alone. The commit history tells the story: nearly every commit is a connection, identity,
    or CORS fix — almost none are gameplay.
-2. **The strategy was one number.** Fleets were a single `strength` scalar; planets a single
-   `population` scalar. With no ship types, no economy choices, and no terrain that mattered,
-   optimal play collapsed to "build the biggest blob, send it at the weakest planet."
-3. **Slow real-time with nothing to decide.** At 1-second ticks and 5% lane progress per tick,
-   a fleet took 20 real seconds to cross one lane — and the player had no meaningful decisions
-   to make while waiting. Real-time pacing without real-time decisions is just waiting.
-4. **Combat had no drama or counterplay.** Mutual 10% attrition per tick means the bigger blob
-   always wins, slowly, with no way to outplay it.
+2. **One number, no decisions.** Fleets were a single `strength` scalar with nothing to spend it
+   on and no one to outplay. (Note: territorial.io is *also* a one-number game — the lesson is
+   not "more numbers", it's that the one number needs constant, tense allocation decisions.)
+3. **Slow real-time with nothing to decide.** 20 real seconds to cross one lane, with nothing to
+   do while waiting. Real-time pacing without real-time decisions is just waiting.
+4. **No drama.** Two players, symmetric blobs, mutual attrition. No shifting fronts, no third
+   parties, no betrayal, no comeback.
 5. **The architecture was too heavy for a prototype.** TypeORM writes per entity per tick, a
    split client/server deployment across two hosting providers, a parallel `server-deploy`
-   re-implementation, and a demo-mode fallback. Most engineering effort went into plumbing
-   rather than fun.
+   re-implementation, and a demo-mode fallback. Most engineering effort went into plumbing.
 
-Every v2 decision below is downstream of one of these five failures.
+v2 keeps real-time — it was never the problem — and fixes the other four.
 
 ## 2. Design pillars
 
-1. **Playable in 10 seconds, alone.** Open a URL, click "New Game", you're playing against an
-   AI. No server, no login, no second human required. Ever.
-2. **A complete game in ~20 minutes.** 20–40 turns. Win conditions designed to end games, not
-   prolong them.
-3. **Every turn is a real decision.** Limited money, limited moves, asymmetric planets, and a
-   counter triangle mean "what do I build and where do I send it" is never trivial.
-4. **Readable depth.** Everything visible (no fog of war), deterministic combat you can count
-   before committing. Chess in space, not a spreadsheet.
-5. **The engine is a pure function.** Turn-based + deterministic means the whole game core is
-   testable, replayable, and trivially extensible to hotseat and async multiplayer later.
+1. **Playable in 10 seconds, alone.** Open the page, click Play, you're in a live FFA against
+   10+ AI factions. No server, no login, no second human. Ever.
+2. **One control.** Pick a target, set the slider, commit. All depth lives in *where, when, and
+   how much* — never in menus, build queues, or unit micromanagement.
+3. **The crowd is the content.** A dozen factions expanding, colliding, ganging up on the
+   leader, and collapsing is what makes every game a story. Bots aren't filler; they're the game.
+4. **A full game in 10–15 minutes**, with a readable arc: land-grab → border wars → snowball
+   endgame.
+5. **The engine is a deterministic fixed-timestep simulation.** Pure, testable, replayable —
+   and lockstep-multiplayer-ready later without a rewrite.
 
 ## 3. The game in one paragraph
 
-You and an AI faction each start with a fortified **Capital** on opposite sides of a small map
-of ~15 planets connected by **phase lanes**. Planets generate credits; credits buy ships from a
-three-class counter triangle (Corvette > Dreadnought > Cruiser > Corvette); ships move along
-lanes one hop per turn and capture undefended planets. You win by **capturing the enemy Capital**
-or by **holding the central Nexus planet for 5 (cumulative) turns** — so turtling at home loses
-to an opponent who takes the middle.
+The galaxy is a graph of **60–90 planets** joined by **phase lanes**. You and **10–15 AI
+factions** each start with one planet and a small **Power** balance. Power grows continuously
+from the planets you own, plus **interest** on whatever you keep banked. To expand, you select a
+planet adjacent to your territory, set your commitment slider (what % of your balance to send),
+and attack: the committed force travels the lane and grinds down the defense; win and the planet
+flips to your color. Neutral planets are cheap; other factions fight back at a defender's
+advantage — and remember who hit them. Last faction standing wins, or first to control 65% of
+the galaxy.
 
-## 4. Core loop (one turn ≈ 30–60 seconds)
+## 4. Core loop (continuous)
 
-1. **Income** — collect credits from every planet you own.
-2. **Build** — spend credits on ships at any planet with a shipyard (they appear immediately,
-   but can't move until next turn).
-3. **Move** — order each of your fleets along a lane (most ships: 1 hop; Corvettes: 2 hops).
-4. **End turn** — the AI takes its turn, then resolution happens in order:
-   combats resolve at every contested planet → undefended planets in enemy orbit flip →
-   Nexus counters tick → victory check.
+There are no turns. At any moment you are doing one of three things:
 
-No "waiting" state exists anywhere in the design.
+- **Expanding** — grabbing neutral planets while they're cheap. Every planet compounds your
+  income, but every attack drains the balance that defends you.
+- **Banking** — sitting on your balance to collect interest and look unappetizing. Bank too
+  long and the map runs out of free land.
+- **Fighting** — committing against a neighbor's planet, reinforcing a front that's crumbling,
+  or piling onto a dying faction to take its land before the other vultures do.
+
+The expand/bank tension (grow income vs. stay defended) is the heartbeat of territorial.io and
+it ports to space intact. The phase-lane graph adds what the original lacks: **chokepoints** you
+can hold cheaply and **fronts** with actual shape.
 
 ## 5. Systems
 
-### 5.1 Map
+### 5.1 Power, income, and interest
 
-A hand-tuned graph of **13–17 planets** (nodes) and phase lanes (edges), mirrored for fairness,
-with a seed-driven decoration pass so maps feel varied. Lanes are the only way to move; the
-graph's chokepoints ARE the terrain.
+Each faction has a single **Power** balance.
 
-Planet types:
+- **Income:** each owned planet adds income per second (base 1/s; specials below modify this).
+- **Interest:** banked Power earns ~+1%/s, **capped** at a multiple of your income (so a giant
+  bank can't grow forever without territory — territorial.io's anti-turtle rule, kept verbatim
+  as a starting point).
+- Power is spent only on attacks. No builds, no upkeep, no second currency.
 
-| Type | Income | Special |
-|---|---|---|
-| **Capital** (1 per player) | 3 | Shipyard. Defense battery (fires every combat round on defense). Lose it = lose the game. |
-| **Forge** | 1 | Shipyard — forward production is how you keep pressure on. |
-| **Rich** | 3 | Pure money. Juicy, hard-to-defend raid targets. |
-| **Bastion** | 1 | Defense battery for whoever owns it. Natural strongpoint. |
-| **Relay** | 1 | Fleets moving out of a Relay get +1 movement that turn. Creates fast corridors. |
-| **Nexus** (1, center) | 2 | Hold at end of turn → +1 to your Nexus counter. First to 5 wins. |
-| Standard | 1 | — |
+### 5.2 Attacking and capturing
 
-Neutral planets start undefended or with a small neutral garrison (tuning knob — garrisons slow
-the early land-grab and make Corvettes worth building turn 1).
+- You may target any planet **adjacent to your territory** (one lane from a planet you own).
+- **The slider** (10–100%) sets how much of your current balance you commit. The committed
+  Power leaves your balance immediately and becomes an **attack front** on that lane.
+- The front grinds against the planet's **Defense** continuously over a few seconds:
+  - *Neutral planets:* fixed garrison by planet size. Predictable, cheap, early-game food.
+  - *Owned planets:* defense drains from the owner's balance automatically at a **defender's
+    multiplier** (~1.5× efficiency, tuning knob), plus the planet's own defense bonus.
+- Front Power > remaining defense → the planet **flips**; leftover force returns to your
+  balance. Front exhausted first → attack fails; the defender keeps the planet and the scar.
+- Multiple fronts may exist at once (including several factions attacking the same target —
+  feeding frenzies around dying factions are a feature).
+- Capturing a faction's **last planet eliminates it**; nearby vultures race for the corpse's
+  former territory (it reverts to weakly-garrisoned neutral).
 
-### 5.2 Ships — the counter triangle
+### 5.3 The map
 
-Three classes. Each deals **double damage** to the class it counters.
+Seeded generation: 60–90 planets in loose **clusters** joined by sparse trunk lanes, so the
+galaxy has regions, borders, and defensible passes rather than uniform mesh. Factions spawn
+spread out, each with one planet and identical starting balance.
 
-| Class | Cost | Move | Attack | Hull | Counters | Role |
-|---|---|---|---|---|---|---|
-| **Corvette** | 2 | 2 | 1 | 1 | Dreadnought | Fast capture, raids, swarming big ships |
-| **Cruiser** | 5 | 1 | 3 | 3 | Corvette | The line ship; sweeps swarms |
-| **Dreadnought** | 12 | 1 | 6 | 8 | Cruiser | Breaks fleets and Bastions; siege bonus: ignores defense batteries |
+Planet specials (light, readable at a glance by icon):
 
-Corvette > Dreadnought > Cruiser > Corvette. You can always read the enemy's composition on the
-map and answer it — that's the central skill loop. No upgrades, no XP, no tech tree in v1: the
-depth comes from *where* things are, not stat stacking.
+| Type | Effect |
+|---|---|
+| **Rich** | 3× income. The planets wars start over. |
+| **Bastion** | Strong defense bonus. Holds a chokepoint cheaply. |
+| **Relay** | You may attack targets up to **2 lanes** away through it. Reach = power projection. |
+| **Wormhole** (paired) | Adjacency to the partner wormhole across the map. Late-game backdoors. |
+| **Nexus** (1, center) | 5× income, big garrison. The mid-game magnet and the endgame's engine. |
+| Standard | — |
 
-### 5.3 Combat
+### 5.4 The bots
 
-Triggered when opposing ships occupy the same planet after moves. Resolution is **deterministic
-and simultaneous**, in rounds, until one side is destroyed:
+The product is the crowd, so bot behavior is where design effort goes after the core sim.
+All bots run the same evaluator with different personality weights:
 
-- Each round, each side's total attack (with counter multipliers) is dealt to the opposing
-  fleet; damage auto-targets countered classes first, then cheapest ships first.
-- Defense batteries (Capital/Bastion) add their attack to the defender every round — unless the
-  attacker has a Dreadnought (siege).
-- The full exchange resolves in a single turn and is replayed to the player as a fast, punchy
-  round-by-round ticker (~2 seconds), so fights feel like events, not bookkeeping.
+- **Expansionist** — grabs neutrals fast, over-extends, income-rich but thin.
+- **Turtle** — banks heavily, holds Bastions, punishes attackers, slow to act.
+- **Opportunist** — attacks whoever just spent their balance attacking someone else.
+- **Vengeful** — remembers who attacked it; retaliation weight decays slowly.
 
-Deterministic means you can count a fight before committing to it — and so can the AI, which
-makes its threats legible. (A "tactics variance" knob is a deliberate later experiment, not v1.)
+Shared behaviors, all driven by visible state (bots never cheat with information — everything
+is public anyway): expand while neutrals remain → probe the weakest neighbor → **dogpile dying
+factions** → **gang up on the runaway leader** (soft rubber-banding that feels like politics,
+not pity). Difficulty = income multiplier + how many behaviors are enabled.
 
-### 5.4 Capture & economy
+### 5.5 Winning, losing, spectating
 
-- End a turn with ships at a planet that has no enemy ships → it's yours. Income starts next turn.
-- One currency: **credits**. No maintenance, no food, no happiness. The build/save decision and
-  the triangle carry the economy.
-- Losing your last shipyard doesn't eliminate you (you still have your Capital by definition —
-  losing *that* is the elimination).
-
-### 5.5 Victory
-
-1. **Decapitation** — capture the enemy Capital.
-2. **Nexus control** — 5 cumulative end-of-turns holding the Nexus.
-
-Both are loud, visible clocks (Nexus counters live in the top bar). The Nexus rule is the
-anti-turtle mechanism: sitting on your battery-fortified Capital is safe, but the game will end
-without you.
-
-### 5.6 AI
-
-Utility-based, per-turn scoring — no search tree needed at this scale:
-
-1. Is my Capital threatened within 2 hops? → defend.
-2. Can I win or deny a Nexus tick? → contest the middle.
-3. Can I capture an undefended planet this turn (weighted by income/type)? → take it.
-4. Can I win a countable fight with local superiority? → attack.
-5. Otherwise → build toward countering the player's visible composition, rally toward the front.
-
-Because combat is deterministic and there's no fog, the AI evaluates fights exactly — it never
-needs to cheat with information. Difficulty levels adjust its income bonus and how many of the
-above rules it's allowed to use. Personalities (Aggressor / Turtle / Opportunist) are an M2
-flavor layer: same evaluator, different weights.
-
-### 5.7 Juice (cheap, high-leverage)
-
-- Lane pulse animation on every move; planet ownership flips with a color bloom.
-- The combat ticker (5.3) with screen-shake on Dreadnought hits.
-- Parallax starfield background. Sound effects in M2.
-- End-of-game summary screen: timeline of planets owned, biggest battle, turn count.
+- **Win:** last faction standing, or first to **65% of planets** (ends games before mop-up).
+- **Lose:** your last planet falls — then you **keep watching**: the camera lingers, the
+  leaderboard keeps updating, and you see who wins the world that ate you. (Territorial.io gets
+  enormous mileage from death-as-spectacle; we keep it.)
+- A persistent **leaderboard sidebar** ranks all living factions by planets + Power. Watching
+  yourself climb it — and watching the leader get mobbed — is the scoreboard-as-drama loop.
 
 ## 6. UX
 
-One screen. The map is 90% of it.
+One screen. The map is 90% of it; factions are flat bold colors so the political map reads
+instantly from across the room.
 
-- **Top bar:** turn number, credits + income, both players' Nexus counters (the game clock).
-- **Map:** click a fleet → reachable planets highlight → click destination. Click a shipyard
-  planet → build buttons with costs right on the panel. Big hit targets; works on a phone.
-- **Right panel:** contents of the selected planet (ships by class, income, special).
-- **End Turn:** one big button. The AI turn + resolution plays out visibly in ~2–4 seconds.
-- New game flow: difficulty pick (Easy / Normal / Hard) → play. Nothing else between the player
-  and turn 1. Autosave to localStorage every turn; "Continue" on the title screen.
+- **Selecting:** click/tap any planet adjacent to your territory → it highlights with attack
+  preview (estimated cost vs. its current defense) → confirm sends at the current slider value.
+- **The slider** sits fixed at the bottom (territorial.io's signature control), thumb-reachable
+  on a phone.
+- **Top bar:** your Power balance (live-ticking), income, interest rate, % of galaxy owned.
+- **Right rail:** the leaderboard. Faction colors, planet counts, deaths struck through.
+- **Feedback:** lanes pulse with traveling attack fronts; planets flash on flips; a kill-feed
+  ticker announces eliminations ("⬛ Void Compact has fallen to 🟥 Crimson Pact").
+- New game flow: difficulty pick → play. Autosave continuously to localStorage; Continue on the
+  title screen resumes mid-battle.
 
 ## 7. Technical architecture
 
@@ -174,50 +161,59 @@ Designed as the *opposite* of v1's stack:
 | | v1 (legacy) | v2 |
 |---|---|---|
 | Topology | Client + Socket.IO server + DB, 2 hosts | **Single static web app. No server. No DB. No sockets.** |
-| Simulation | 1s tick loop, ORM writes per entity per tick | **Pure-function engine: `resolveTurn(state, orders) → state`** |
-| Multiplayer | Required, real-time | None in v1; hotseat free; async later via order exchange |
-| Testing | Effectively none | Engine is deterministic + seeded RNG → unit-test everything |
+| Simulation | 1s ticks, ORM writes per entity per tick | **In-memory fixed-timestep sim (10 ticks/s), pure TS** |
+| Opponents | Required humans, real-time | 10–15 in-process bots |
+| Testing | Effectively none | Deterministic + seeded RNG → unit-test and replay everything |
 
 Concretely:
 
 - **One package.** Vite + React + TypeScript. The monorepo, `server-deploy/`, and `netlify/`
   trees from v1 are not carried forward.
-- **`src/engine/`** — pure TypeScript, zero React/DOM imports: types, map generation (seeded),
-  order validation, combat resolution, AI. Every rule in this document lands here with a vitest
-  test next to it. This is where most of the work and all of the correctness lives.
-- **`src/ui/`** — React + Zustand. The map renders as **SVG** (15 nodes doesn't need canvas;
-  SVG gives free hit-testing, CSS animation, and accessibility).
-- **Persistence:** localStorage (autosave + settings). **Deploy:** GitHub Pages or Netlify
-  static — push to deploy, nothing to keep alive.
-- **Multiplayer path (explicitly deferred):** the engine signature already supports it —
-  hotseat is "two humans submit orders", async online is "exchange serialized orders through a
-  dumb relay or a share-URL". We do not build any of it until single-player is fun.
+- **`src/engine/`** — pure TypeScript, zero React/DOM imports: `step(state, dt, commands) →
+  state` at a fixed 10 ticks/s. Map generation, income/interest, fronts, captures, and the bot
+  evaluator all live here, each with vitest tests. Bots emit the same `commands` a player does.
+- **`src/ui/`** — React + Zustand; `requestAnimationFrame` interpolates between sim ticks.
+  Map renders as **Canvas** (one `<canvas>`, redraw on change — 90 nodes × 15 factions × pulsing
+  fronts is past SVG's comfort zone, and our hit-testing is just nearest-planet math).
+- **Performance budget:** sim tick < 2ms for 90 planets / 16 factions / 50 live fronts. This is
+  comfortably achievable with plain arrays and no allocations in the hot path.
+- **Persistence:** localStorage. **Deploy:** GitHub Pages or Netlify static.
+- **Multiplayer path (explicitly deferred):** deterministic lockstep means real multiplayer is
+  "relay everyone's commands" — a dumb message pipe, no authoritative game server. We do not
+  build any of it until the solo game is fun.
 
 ## 8. Milestones
 
-**M0 — Walking skeleton.** Fixed map, income, build Cruisers only, move, capture, deterministic
-combat (one class), greedy-capture AI, Capital win, autosave. *Exit test: you can sit down and
-play a complete, winnable game.*
+**M0 — Walking skeleton.** Generated map, income + interest, slider, attack fronts, neutral +
+enemy capture, 6 identical greedy bots, elimination, win/lose. *Exit test: you can lose a game
+because you over-extended, and know it was your fault.*
 
-**M1 — Make it a game.** Full triangle + counters, all planet types, defense batteries + siege,
-Nexus victory, the real AI evaluator, combat ticker, difficulty levels. *Exit test: someone who
-isn't us plays two games in a row without being asked to.*
+**M1 — Make it a game.** Planet specials, defender's multiplier tuning, all four bot
+personalities + dogpile/gang-up behaviors, leaderboard, kill feed, attack preview, death-
+spectator mode, difficulty levels. *Exit test: someone who isn't us plays three games in a row,
+and at least once says "the orange one betrayed me."*
 
-**M2 — Juice & variety.** Seeded map variations, AI personalities, sound, end-game summary,
-hotseat mode, balance pass from playtests. *Stretch: 3–4 faction free-for-all (the engine is
-N-player from day one), random events.*
+**M2 — Juice & variety.** Map seeds with named layouts, wormholes, faction names/emblems,
+sound, end-game replay timeline of the political map, balance pass from playtests. *Stretch:
+hotseat-on-one-map experiments; lockstep online prototype.*
 
 ## 9. Non-goals (so v1's scope creep stays dead)
 
-- No real-time anything. No servers, accounts, databases, or WebSockets.
-- No tech trees, ship upgrades, diplomacy, espionage, or fog of war.
-- No 3D, no canvas/WebGL engine work.
-- No online multiplayer until M2 is done and the single-player game is demonstrably fun.
+- No servers, accounts, databases, or WebSockets — online multiplayer waits until M2 is done.
+- No build menus, tech trees, ship classes, unit micromanagement, or formal diplomacy/alliances
+  (alliance *behavior* emerges from bot weights; there is no treaty UI).
+- No fog of war — the political map being fully visible is the spectacle.
+- No 3D, no WebGL engine work.
 
 ## 10. Open questions (to settle by playing, not debating)
 
-1. Neutral garrisons on/off, and how big — pace of the early game.
-2. Exact triangle multiplier (×2 vs ×1.5) and Dreadnought cost — the "blob anyway" risk.
-3. Nexus target (5 ticks?) and whether ticks require *surviving* a contest that turn.
-4. Whether defenders may retreat (adds decisions, adds rules — test in M1).
-5. Map size sweet spot: 13 nodes plays fast, 17 plays deep.
+1. **Interest curve** — territorial.io's exact rates, or gentler? This number single-handedly
+   sets the expand/bank tension and will need the most tuning.
+2. **Defender's multiplier** (1.5×?) and whether defense drain can bankrupt a defender fighting
+   on two fronts — the multi-front collapse is dramatic but may be too punishing.
+3. **Attack travel time** — instant pressure (pure territorial.io) vs. visible travel along the
+   lane (2–3s, more readable and more space-y). Leaning travel; needs feel-testing.
+4. **Map size vs. bot count** — 60 planets/10 bots plays tight and fast; 90/16 plays epic.
+5. **65% domination threshold** — high enough to feel earned, low enough to skip the mop-up?
+6. **Vulture rule** — does a dead faction's land revert to neutral (race to grab) or transfer
+   to the killer (rewards the kill shot)? Revert-to-neutral is more chaotic and probably more fun.
