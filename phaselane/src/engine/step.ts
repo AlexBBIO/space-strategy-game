@@ -18,6 +18,20 @@ export function totalPower(state: GameState, fid: number): number {
   return total;
 }
 
+export function factionCapacity(state: GameState, fid: number): number {
+  let cap = 0;
+  for (const p of state.planets) {
+    if (p.owner === fid) cap += C.CAPACITY_BY_SIZE[p.size];
+  }
+  return cap;
+}
+
+/** 1 below the taper zone, falling linearly to 0 at capacity. */
+export function growthFactor(total: number, capacity: number): number {
+  if (capacity <= 0) return 0;
+  return Math.min(1, Math.max(0, (capacity - total) / (C.CAPACITY_TAPER * capacity)));
+}
+
 export function factionInterest(state: GameState, fid: number): number {
   return Math.min(
     C.INTEREST_RATE * totalPower(state, fid),
@@ -58,17 +72,29 @@ export function step(state: GameState, playerCommands: Command[] = []): void {
     else if (cmd.type === 'priority') applyPriority(state, cmd);
   }
 
-  // Economy: income lands on each planet, interest spreads evenly, then
-  // garrisons equalize toward priority-weighted targets (conserving the
-  // total) — this flow is how reinforcements reach a besieged planet.
+  // Economy: income lands on each planet and interest spreads evenly, both
+  // tapered by how close the faction is to its territory's fleet capacity
+  // (and decaying when over it) — then garrisons equalize toward
+  // priority-weighted targets (conserving the total), which is how
+  // reinforcements reach a besieged planet.
   for (const f of state.factions) {
     if (!f.alive) continue;
     const owned = state.planets.filter(p => p.owner === f.id);
     if (!owned.length) continue;
-    for (const p of owned) p.guard += C.INCOME_BY_SIZE[p.size] * C.DT;
-    const interest = factionInterest(state, f.id) * C.DT;
+    const capacity = factionCapacity(state, f.id);
+    const factor = growthFactor(
+      owned.reduce((s, p) => s + p.guard, 0),
+      capacity,
+    );
+    for (const p of owned) p.guard += C.INCOME_BY_SIZE[p.size] * factor * C.DT;
+    const interest = factionInterest(state, f.id) * factor * C.DT;
     for (const p of owned) p.guard += interest / owned.length;
-    const total = owned.reduce((s, p) => s + p.guard, 0);
+    let total = owned.reduce((s, p) => s + p.guard, 0);
+    if (total > capacity) {
+      const decay = (total - capacity) * C.OVERCAP_DECAY * C.DT;
+      for (const p of owned) p.guard -= decay * (p.guard / total);
+      total -= decay;
+    }
     const totalW = owned.reduce((s, p) => s + p.priority, 0);
     for (const p of owned) {
       const target = total * (p.priority / totalW);
@@ -173,7 +199,15 @@ function grind(state: GameState, front: Front): void {
     return;
   }
 
-  const exchange = p.owner >= 0 ? C.EXCHANGE_OWNED : C.EXCHANGE_NEUTRAL;
+  let exchange = C.EXCHANGE_NEUTRAL;
+  if (p.owner >= 0) {
+    // War exhaustion: late-game defense erodes so standoffs resolve.
+    const t = Math.min(
+      1,
+      Math.max(0, (state.time - C.EXHAUSTION_START) / (C.TIME_LIMIT - C.EXHAUSTION_START)),
+    );
+    exchange = C.EXCHANGE_OWNED - (C.EXCHANGE_OWNED - 1) * t;
+  }
 
   let defLoss = C.GRIND_RATE * front.power * C.DT;
   front.power -= defLoss * exchange;

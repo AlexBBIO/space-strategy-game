@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Command, DT, GameState, INCOME_BY_SIZE, createGame, estimateAttackCost,
-  factionIncome, factionInterest, isAttackable, planetCount, step,
+  factionCapacity, factionIncome, factionInterest, growthFactor, isAttackable,
+  planetCount, step,
 } from '../engine';
 import { computeView, draw, findPlanetAt } from './render';
 
@@ -32,6 +33,8 @@ interface Inspect {
 interface Hud {
   time: number;
   balance: number;
+  capacity: number;
+  growth: number;
   income: number;
   interest: number;
   planets: number;
@@ -74,9 +77,13 @@ function snapshot(state: GameState, inspectId: number | null): Hud {
       isPlayer: f.isPlayer,
     }))
     .sort((a, b) => b.planets - a.planets || b.power - a.power);
+  const capacity = factionCapacity(state, 0);
+  const factor = growthFactor(state.factions[0].balance, capacity);
   return {
     time: state.time,
     balance: state.factions[0].balance,
+    capacity,
+    growth: (factionIncome(state, 0) + factionInterest(state, 0)) * factor,
     income: factionIncome(state, 0),
     interest: factionInterest(state, 0),
     planets: planetCount(state, 0),
@@ -210,10 +217,14 @@ export function Game({ seed, onExit }: { seed: number; onExit: () => void }) {
       />
 
       <div className="topbar">
-        <span className="stat power">⚡ {Math.floor(hud.balance)}</span>
-        <span className="stat">+{(hud.income + hud.interest).toFixed(1)}/s</span>
+        <span className={`stat power ${hud.balance >= hud.capacity * 0.9 ? 'atcap' : ''}`}>
+          ⚡ {Math.floor(hud.balance)} / {hud.capacity}
+        </span>
+        <span className="stat">+{hud.growth.toFixed(1)}/s</span>
         <span className="stat dim">
-          ({hud.income.toFixed(1)} income, {hud.interest.toFixed(1)} interest)
+          {hud.balance >= hud.capacity * 0.9
+            ? 'fleet at capacity — expand to grow'
+            : `(${hud.income.toFixed(1)} income, ${hud.interest.toFixed(1)} interest)`}
         </span>
         <span className="stat">
           🪐 {hud.planets}/{hud.totalPlanets}

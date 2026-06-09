@@ -78,8 +78,11 @@ planet holds a **garrison**, and your Power is their sum.
 
 - **Income:** each owned planet adds income per second into its own garrison (base 1/s;
   specials below modify this).
-- **Interest:** total Power earns ~+1%/s, **capped** at a multiple of your income (so a giant
-  bank can't grow forever without territory — territorial.io's anti-turtle rule).
+- **Interest:** total Power earns ~+1%/s, capped at a multiple of income.
+- **Fleet capacity (territorial.io's real anti-turtle rule):** your territory sets the maximum
+  Power it can support (per-planet capacity by size). Growth tapers to zero as you approach
+  the cap, and Power above it (after losing territory) decays. Expansion is the only path to
+  a bigger fleet; banking hits a wall, never a snowball.
 - **Garrisons continuously equalize toward priority-weighted targets** (a tunable flow rate;
   capture triggers an instant redeploy). Defense is auto-distributed, *visible on every
   planet*, and self-balancing. Each planet has a **garrison priority slider** (×0.5–×3) — a

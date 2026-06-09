@@ -1,5 +1,6 @@
 import * as C from './constants';
 import { nextRand } from './rng';
+import { factionCapacity } from './step';
 import { Command, GameState } from './types';
 
 /**
@@ -40,7 +41,9 @@ function think(state: GameState, fid: number): Command | null {
   }
   powers.sort((a, b) => a - b);
   const median = powers[Math.floor(powers.length / 2)] || 1;
-  if (topPlanets !== fid && counts[topPlanets] > 0.3 * state.planets.length) threat = topPlanets;
+  if (topPlanets !== fid && counts[topPlanets] > C.DOGPILE_PLANET_FRAC * state.planets.length) {
+    threat = topPlanets;
+  }
   else if (topPower !== fid && state.factions[topPower].balance > 2.5 * Math.max(median, 1)) {
     threat = topPower;
   }
@@ -81,15 +84,16 @@ function think(state: GameState, fid: number): Command | null {
     return { type: 'attack', faction: fid, target: bestThreat, fraction };
   }
   // War: when the frontier is closed and the price looks right — or the war
-  // chest is overflowing (the anti-stalemate pressure valve; without it two
-  // rich empires can eye each other forever, and a bot stuck behind one
-  // overpriced neutral would never fight at all).
-  if (bestEnemy >= 0 && (bestNeutral < 0 || f.balance > C.BOT_AGGRO_BALANCE)) {
+  // chest is pressing against the fleet capacity (banked Power near the cap
+  // stops growing, so spending it is free; this is also the anti-stalemate
+  // valve, and frees a bot stuck behind one overpriced neutral).
+  const nearCap = f.balance > C.BOT_AGGRO_CAP_FRAC * factionCapacity(state, fid);
+  if (bestEnemy >= 0 && (bestNeutral < 0 || nearCap)) {
     if (f.balance > bestEnemyCost * 1.5 + 30) {
       const fraction = clamp((bestEnemyCost * 1.6 + 15) / f.balance, 0.25, 0.7);
       return { type: 'attack', faction: fid, target: bestEnemy, fraction };
     }
-    if (f.balance > C.BOT_AGGRO_BALANCE) {
+    if (nearCap) {
       return { type: 'attack', faction: fid, target: bestEnemy, fraction: 0.6 };
     }
   }

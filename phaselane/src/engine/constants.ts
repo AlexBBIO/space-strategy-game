@@ -7,8 +7,14 @@ export const DEFAULT_PLANETS = 56;
 export const DEFAULT_BOTS = 7;
 
 export const START_BALANCE = 60;
-/** Bots stop pricing targets and go to war above this war chest. */
-export const BOT_AGGRO_BALANCE = 300;
+/** Bots stop pricing targets and go to war above this share of capacity. */
+export const BOT_AGGRO_CAP_FRAC = 0.75;
+/** Max Power a planet supports, by size — territory IS the fleet ceiling. */
+export const CAPACITY_BY_SIZE = [0, 60, 80, 100];
+/** Growth tapers linearly to zero across this top fraction of capacity. */
+export const CAPACITY_TAPER = 0.3;
+/** Power above capacity decays at this rate per second (per point of excess). */
+export const OVERCAP_DECAY = 0.05;
 /** Income per second by planet size (index 1–3). */
 export const INCOME_BY_SIZE = [0, 1.0, 1.4, 1.9];
 /** Interest per second on banked balance... */
@@ -21,6 +27,9 @@ export const GRIND_RATE = 0.25;
 /** Power an attacker pays per point of damage dealt (defender's advantage). */
 export const EXCHANGE_OWNED = 1.3;
 export const EXCHANGE_NEUTRAL = 0.9;
+/** War exhaustion: from this time on, the defender's advantage erodes
+ * linearly to 1.0 by the time limit, so standoffs tip toward offense. */
+export const EXHAUSTION_START = 600;
 /**
  * How fast garrisons equalize toward the empire mean, per second. This sets
  * the alpha-strike window: overwhelm a planet faster than reinforcements
@@ -37,7 +46,10 @@ export const MIN_COMMIT = 5;
  * floor a beaten front would linger forever, pinning the shield). */
 export const FRONT_FIZZLE = 1;
 
-export const WIN_PLANET_FRAC = 0.65;
+export const WIN_PLANET_FRAC = 0.55;
+/** Leader share of the galaxy that triggers the crowd to dogpile. Must sit
+ * meaningfully below WIN_PLANET_FRAC or nobody can ever close out a win. */
+export const DOGPILE_PLANET_FRAC = 0.45;
 /** Sudden death: at the time limit the largest empire wins. Guarantees an
  * ending even if the last titans deadlock. */
 export const TIME_LIMIT = 1200;

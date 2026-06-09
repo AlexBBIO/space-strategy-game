@@ -99,6 +99,23 @@ describe('combat', () => {
   });
 });
 
+describe('fleet capacity', () => {
+  it('stops growth at capacity and decays excess Power', () => {
+    const state = createGame(13);
+    for (const f of state.factions) f.nextThinkAt = Infinity; // freeze bots
+    const home = state.planets.find(p => p.owner === 0)!;
+    // Banking forever stalls at the territory's capacity.
+    for (let i = 0; i < 6000; i++) step(state); // 10 min idle
+    const cap = 80; // one size-2 planet
+    expect(state.factions[0].balance).toBeLessThanOrEqual(cap + 1);
+    expect(state.factions[0].balance).toBeGreaterThan(cap * 0.85);
+    // Power above capacity (e.g. after losing territory) decays.
+    home.guard = 300;
+    for (let i = 0; i < 600; i++) step(state); // 60s
+    expect(state.factions[0].balance).toBeLessThan(300);
+  });
+});
+
 describe('garrison priority', () => {
   it('draws extra garrison to a fortified planet and conserves the total', () => {
     const state = createGame(33);
