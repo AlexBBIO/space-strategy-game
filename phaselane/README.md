@@ -4,6 +4,9 @@ Real-time territorial.io-style space strategy against AI factions.
 See `../DESIGN.md` for the full design. Everything runs client-side —
 no server, no accounts.
 
+**Play the latest build:** https://alexbbio.github.io/space-strategy-game/
+(auto-deployed by `.github/workflows/pages.yml` on every push).
+
 ## Run it
 
 ```
