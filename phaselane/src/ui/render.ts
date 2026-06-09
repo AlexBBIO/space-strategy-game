@@ -179,11 +179,14 @@ export function draw(
       ctx.fill();
     }
 
-    // The number is the planet's whole defense: garrison + shield.
+    // Player-POV numbers: your planets show sendable garrison (gold, like
+    // the top bar); everyone else's show total defense — the price to beat.
     const contested = contestedSet.has(p.id);
+    const mine = p.owner === 0;
+    const value = mine ? p.guard : p.shield + p.guard;
     ctx.font = '10px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillStyle = contested ? '#ff9a9a' : 'rgba(170,185,210,0.85)';
-    ctx.fillText(String(Math.max(0, Math.ceil(p.shield + p.guard))), x, y + r + 12);
+    ctx.fillStyle = contested ? '#ff9a9a' : mine ? '#ffd76a' : 'rgba(170,185,210,0.85)';
+    ctx.fillText(String(Math.max(0, Math.ceil(value))), x, y + r + 12);
   }
 }

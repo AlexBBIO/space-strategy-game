@@ -22,7 +22,8 @@ interface Inspect {
   isYours: boolean;
   size: number;
   income: number;
-  defense: number;
+  guard: number;
+  shield: number;
   estCost: number | null;
   underAttack: boolean;
 }
@@ -52,7 +53,8 @@ function inspectInfo(state: GameState, id: number | null): Inspect | null {
     isYours: p.owner === 0,
     size: p.size,
     income: INCOME_BY_SIZE[p.size],
-    defense: Math.max(0, Math.ceil(p.shield + p.guard)),
+    guard: Math.max(0, Math.ceil(p.guard)),
+    shield: Math.max(0, Math.ceil(p.shield)),
     estCost: isAttackable(state, 0, id) ? Math.ceil(estimateAttackCost(state, 0, id)) : null,
     underAttack: state.fronts.some(fr => fr.target === id),
   };
@@ -238,8 +240,10 @@ export function Game({ seed, onExit }: { seed: number; onExit: () => void }) {
             </span>
           </div>
           <div className="line">
-            Size {hud.inspect.size} · income +{hud.inspect.income.toFixed(1)}/s · defense{' '}
-            {hud.inspect.defense}
+            Size {hud.inspect.size} · income +{hud.inspect.income.toFixed(1)}/s ·{' '}
+            {hud.inspect.isYours
+              ? `garrison ${hud.inspect.guard} ⚡ · shield ${hud.inspect.shield}`
+              : `defense ${hud.inspect.guard + hud.inspect.shield} (garrison ${hud.inspect.guard} + shield ${hud.inspect.shield})`}
           </div>
           {hud.inspect.estCost !== null && (
             <div className="line cost">Attack cost ≈ {hud.inspect.estCost} ⚡ — click to attack</div>
