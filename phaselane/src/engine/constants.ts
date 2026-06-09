@@ -8,7 +8,7 @@ export const DEFAULT_BOTS = 7;
 
 export const START_BALANCE = 60;
 /** Bots stop pricing targets and go to war above this war chest. */
-export const BOT_AGGRO_BALANCE = 350;
+export const BOT_AGGRO_BALANCE = 300;
 /** Income per second by planet size (index 1–3). */
 export const INCOME_BY_SIZE = [0, 1.0, 1.4, 1.9];
 /** Interest per second on banked balance... */

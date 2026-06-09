@@ -39,6 +39,7 @@ export function draw(
   h: number,
   attackable: Set<number>,
   hover: number | null,
+  selected: number | null,
 ): void {
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = '#05070f';
@@ -56,6 +57,24 @@ export function draw(
 
   const sx = (x: number) => view.ox + x * view.scale;
   const sy = (y: number) => view.oy + y * view.scale;
+
+  // Empire territory: soft color fields around owned planets. Same-color
+  // fields overlap and read as one contiguous, shifting border.
+  for (const p of state.planets) {
+    if (p.owner < 0) continue;
+    const x = sx(p.pos.x);
+    const y = sy(p.pos.y);
+    const r = (70 + p.size * 8) * view.scale;
+    const color = state.factions[p.owner].color;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `${color}38`);
+    g.addColorStop(0.65, `${color}18`);
+    g.addColorStop(1, `${color}00`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // Phase lanes.
   ctx.strokeStyle = 'rgba(120,140,180,0.22)';
@@ -115,6 +134,8 @@ export function draw(
   }
 
   // Planets.
+  const contestedSet = new Set<number>();
+  for (const fr of state.fronts) contestedSet.add(fr.target);
   for (const p of state.planets) {
     const x = sx(p.pos.x);
     const y = sy(p.pos.y);
@@ -134,9 +155,31 @@ export function draw(
       ctx.setLineDash([]);
     }
 
+    if (selected === p.id) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, r + 4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(x, y, r + 8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Income pips: one gold dot per income tier (= planet size).
+    ctx.fillStyle = '#ffd76a';
+    for (let i = 0; i < p.size; i++) {
+      ctx.beginPath();
+      ctx.arc(x - (p.size - 1) * 3 + i * 6, y - r - 7, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const contested = contestedSet.has(p.id);
     ctx.font = '10px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(170,185,210,0.85)';
+    ctx.fillStyle = contested ? '#ff9a9a' : 'rgba(170,185,210,0.85)';
     ctx.fillText(String(Math.max(0, Math.ceil(p.shield))), x, y + r + 12);
   }
 }

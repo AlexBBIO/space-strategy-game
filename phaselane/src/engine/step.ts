@@ -30,6 +30,14 @@ export function isAttackable(state: GameState, fid: number, target: number): boo
   return p.neighbors.some(n => state.planets[n].owner === fid);
 }
 
+/** Rough price of taking a planet — same heuristic the bots use to shop. */
+export function estimateAttackCost(state: GameState, fid: number, target: number): number {
+  const p = state.planets[target];
+  if (!p || p.owner === fid) return 0;
+  if (p.owner < 0) return p.shield * C.EXCHANGE_NEUTRAL;
+  return (p.shield + state.factions[p.owner].balance * 0.4) * C.EXCHANGE_OWNED;
+}
+
 /** Advance the sim one fixed tick. Mutates state; deterministic per seed. */
 export function step(state: GameState, playerCommands: Command[] = []): void {
   if (state.winner !== null) return;

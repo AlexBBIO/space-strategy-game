@@ -52,8 +52,9 @@ function think(state: GameState, fid: number): Command | null {
   }
   // War: when the frontier is closed and the price looks right — or the war
   // chest is overflowing (the anti-stalemate pressure valve; without it two
-  // rich empires can eye each other forever).
-  if (bestNeutral < 0 && bestEnemy >= 0) {
+  // rich empires can eye each other forever, and a bot stuck behind one
+  // overpriced neutral would never fight at all).
+  if (bestEnemy >= 0 && (bestNeutral < 0 || f.balance > C.BOT_AGGRO_BALANCE)) {
     if (f.balance > bestEnemyCost * 1.5 + 30) {
       const fraction = clamp((bestEnemyCost * 1.6 + 15) / f.balance, 0.25, 0.7);
       return { type: 'attack', faction: fid, target: bestEnemy, fraction };

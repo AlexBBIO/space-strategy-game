@@ -193,10 +193,49 @@ input {
   color: #8fa3c0;
 }
 
-.events {
+.inspector {
   position: absolute;
   left: 12px;
   bottom: 64px;
+  width: 250px;
+  background: rgba(8, 12, 24, 0.9);
+  border: 1px solid #1b2742;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+.inspector .head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.inspector .swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.inspector .line {
+  color: #8fa3c0;
+  margin-top: 2px;
+}
+
+.inspector .line.cost {
+  color: #ffd76a;
+}
+
+.inspector .line.war {
+  color: #ff9a9a;
+}
+
+.events {
+  position: absolute;
+  left: 12px;
+  bottom: 178px;
   font-size: 13px;
   display: flex;
   flex-direction: column-reverse;

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Command, DT, GameState, createGame, factionIncome, factionInterest,
-  isAttackable, planetCount, step,
+  Command, DT, GameState, INCOME_BY_SIZE, createGame, estimateAttackCost,
+  factionIncome, factionInterest, isAttackable, planetCount, step,
 } from '../engine';
 import { computeView, draw, findPlanetAt } from './render';
 
@@ -15,6 +15,19 @@ interface FactionRow {
   isPlayer: boolean;
 }
 
+interface Inspect {
+  id: number;
+  ownerName: string;
+  ownerColor: string;
+  isYours: boolean;
+  size: number;
+  income: number;
+  shield: number;
+  shieldMax: number;
+  estCost: number | null;
+  underAttack: boolean;
+}
+
 interface Hud {
   time: number;
   balance: number;
@@ -26,9 +39,28 @@ interface Hud {
   events: { time: number; text: string; color: string }[];
   winner: number | null;
   playerAlive: boolean;
+  inspect: Inspect | null;
 }
 
-function snapshot(state: GameState): Hud {
+function inspectInfo(state: GameState, id: number | null): Inspect | null {
+  if (id === null) return null;
+  const p = state.planets[id];
+  if (!p) return null;
+  return {
+    id,
+    ownerName: p.owner >= 0 ? state.factions[p.owner].name : 'Neutral',
+    ownerColor: p.owner >= 0 ? state.factions[p.owner].color : '#8a93a6',
+    isYours: p.owner === 0,
+    size: p.size,
+    income: INCOME_BY_SIZE[p.size],
+    shield: Math.max(0, Math.ceil(p.shield)),
+    shieldMax: p.shieldMax,
+    estCost: isAttackable(state, 0, id) ? Math.ceil(estimateAttackCost(state, 0, id)) : null,
+    underAttack: state.fronts.some(fr => fr.target === id),
+  };
+}
+
+function snapshot(state: GameState, inspectId: number | null): Hud {
   const rows = state.factions
     .map(f => ({
       id: f.id,
@@ -51,6 +83,7 @@ function snapshot(state: GameState): Hud {
     events: state.events.slice(),
     winner: state.winner,
     playerAlive: state.factions[0].alive,
+    inspect: inspectInfo(state, inspectId),
   };
 }
 
@@ -60,6 +93,7 @@ export function Game({ seed, onExit }: { seed: number; onExit: () => void }) {
   const queueRef = useRef<Command[]>([]);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const hoverRef = useRef<number | null>(null);
+  const selectedRef = useRef<number | null>(null);
 
   const [fraction, setFraction] = useState(0.35);
   const fractionRef = useRef(fraction);
@@ -70,7 +104,7 @@ export function Game({ seed, onExit }: { seed: number; onExit: () => void }) {
   const [speed, setSpeed] = useState(1);
   const speedRef = useRef(speed);
   speedRef.current = speed;
-  const [hud, setHud] = useState<Hud>(() => snapshot(stateRef.current!));
+  const [hud, setHud] = useState<Hud>(() => snapshot(stateRef.current!, null));
 
   useEffect(() => {
     let raf = 0;
@@ -106,13 +140,16 @@ export function Game({ seed, onExit }: { seed: number; onExit: () => void }) {
             if (isAttackable(state, 0, p.id)) attackable.add(p.id);
           }
         }
-        draw(ctx, state, view, w, h, attackable, hoverRef.current);
+        draw(ctx, state, view, w, h, attackable, hoverRef.current, selectedRef.current);
+        const hov = hoverRef.current;
         canvas.style.cursor =
-          hoverRef.current !== null && attackable.has(hoverRef.current) ? 'crosshair' : 'default';
+          hov !== null && (attackable.has(hov) || state.planets[hov].owner === 0)
+            ? hov !== null && attackable.has(hov) ? 'crosshair' : 'pointer'
+            : 'default';
       }
 
       if (now >= hudAt) {
-        setHud(snapshot(state));
+        setHud(snapshot(state, hoverRef.current ?? selectedRef.current));
         hudAt = now + 150;
       }
       raf = requestAnimationFrame(loop);
@@ -132,7 +169,14 @@ export function Game({ seed, onExit }: { seed: number; onExit: () => void }) {
     const { x, y } = canvasPoint(e);
     const view = computeView(canvas.clientWidth, canvas.clientHeight);
     const id = findPlanetAt(state, view, x, y);
-    if (id === null) return;
+    if (id === null) {
+      selectedRef.current = null;
+      return;
+    }
+    if (state.planets[id].owner === 0) {
+      selectedRef.current = id;
+      return;
+    }
     if (state.winner !== null || !state.factions[0].alive) return;
     if (!isAttackable(state, 0, id)) return;
     queueRef.current.push({ type: 'attack', faction: 0, target: id, fraction: fractionRef.current });
@@ -180,6 +224,25 @@ export function Game({ seed, onExit }: { seed: number; onExit: () => void }) {
           </div>
         ))}
       </div>
+
+      {hud.inspect && (
+        <div className="inspector">
+          <div className="head">
+            <span className="swatch" style={{ background: hud.inspect.ownerColor }} />
+            <span style={{ color: hud.inspect.ownerColor }}>
+              {hud.inspect.isYours ? 'Your planet' : `${hud.inspect.ownerName} planet`}
+            </span>
+          </div>
+          <div className="line">
+            Size {hud.inspect.size} · income +{hud.inspect.income.toFixed(1)}/s · shield{' '}
+            {hud.inspect.shield}/{hud.inspect.shieldMax}
+          </div>
+          {hud.inspect.estCost !== null && (
+            <div className="line cost">Attack cost ≈ {hud.inspect.estCost} ⚡ — click to attack</div>
+          )}
+          {hud.inspect.underAttack && <div className="line war">⚔ Under attack</div>}
+        </div>
+      )}
 
       <div className="events">
         {hud.events.map((ev, i) => (
