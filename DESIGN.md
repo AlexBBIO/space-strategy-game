@@ -101,8 +101,8 @@ planet holds a **garrison**, and your Power is their sum.
   (defender's advantage on owned planets — tuning knob).
   - *Neutral planets:* fixed shield by planet size. Predictable, cheap, early-game food.
   - *Owned planets:* garrison + shield, both visible — the number on the planet IS the price.
-  - *On capture, surviving attackers garrison the conquest* (fresh conquests are briefly
-    strong, then equalize).
+  - *On capture, the victor's garrisons instantly redeploy evenly across the empire* — the
+    survivors don't pile up on the conquest, and the post-attack thinness stays readable.
 - While a front is grinding, the attacker may **reinforce it** with further commitments (the
   slider again). Drip 30% and top up if it stalls, or send 70% up front — that recurring
   bet-sizing decision is the combat system's core skill.

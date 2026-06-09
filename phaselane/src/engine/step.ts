@@ -178,8 +178,13 @@ function grind(state: GameState, front: Front): void {
   if (p.shield <= 0) {
     p.owner = front.faction;
     p.shield = Math.max(5, p.shieldMax * C.CAPTURE_SHIELD_FRAC);
-    p.guard = front.power; // the survivors garrison their conquest
+    p.guard = front.power;
     removeFront(state, front);
+    // Victory redeploy: the empire's garrisons immediately re-spread evenly,
+    // so a conquest doesn't leave the survivors piled on one planet.
+    const owned = state.planets.filter(q => q.owner === front.faction);
+    const mean = owned.reduce((s, q) => s + q.guard, 0) / owned.length;
+    for (const q of owned) q.guard = mean;
   }
 }
 

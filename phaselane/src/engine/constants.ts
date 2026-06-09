@@ -25,8 +25,9 @@ export const EXCHANGE_NEUTRAL = 0.9;
  * How fast garrisons equalize toward the empire mean, per second. This sets
  * the alpha-strike window: overwhelm a planet faster than reinforcements
  * flow in, or settle in to bleed the whole empire through one front.
+ * (Capturing a planet also triggers an instant even redeploy.)
  */
-export const REBALANCE_RATE = 0.15;
+export const REBALANCE_RATE = 0.3;
 /** Shield regen per second when not under attack. */
 export const SHIELD_REGEN = 2.0;
 /** Shield a planet flips with, as a fraction of its max. */
