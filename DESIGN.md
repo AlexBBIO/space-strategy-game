@@ -86,10 +86,18 @@ Each faction has a single **Power** balance.
 - You may target any planet **adjacent to your territory** (one lane from a planet you own).
 - **The slider** (10–100%) sets how much of your current balance you commit. The committed
   Power leaves your balance immediately and becomes an **attack front** on that lane.
-- The front grinds against the planet's **Defense** continuously over a few seconds:
+- The front grinds against the planet's **Defense** as damage-over-time — **combat is never
+  instant**. Duration scales inversely with overkill: crushing force resolves in ~1–2s, an even
+  fight grinds for 5–10s (tuning knobs). The grind is load-bearing in three ways: it's the
+  defender's reaction window (respond economically — hold, or counter-punch the attacker while
+  their balance is spent down), it's what makes multi-front collapses and pile-ons possible,
+  and it's the visible drama on the map.
   - *Neutral planets:* fixed garrison by planet size. Predictable, cheap, early-game food.
   - *Owned planets:* defense drains from the owner's balance automatically at a **defender's
     multiplier** (~1.5× efficiency, tuning knob), plus the planet's own defense bonus.
+- While a front is grinding, the attacker may **reinforce it** with further commitments (the
+  slider again). Drip 30% and top up if it stalls, or send 70% up front — that recurring
+  bet-sizing decision is the combat system's core skill.
 - Front Power > remaining defense → the planet **flips**; leftover force returns to your
   balance. Front exhausted first → attack fails; the defender keeps the planet and the scar.
 - Multiple fronts may exist at once (including several factions attacking the same target —
