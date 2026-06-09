@@ -1,0 +1,280 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: #05070f;
+  color: #d6e2f0;
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+button {
+  background: #16203a;
+  color: #d6e2f0;
+  border: 1px solid #2c3c63;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1f2d50;
+}
+
+button.active {
+  background: #2c3c63;
+  border-color: #4da6ff;
+}
+
+button.primary {
+  background: #1d4ed8;
+  border-color: #3b82f6;
+  font-weight: 600;
+}
+
+button.primary:hover {
+  background: #2563eb;
+}
+
+input {
+  background: #0d1424;
+  color: #d6e2f0;
+  border: 1px solid #2c3c63;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+/* ---- title screen ---- */
+
+.title {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+}
+
+.title h1 {
+  font-size: 56px;
+  letter-spacing: 14px;
+  margin: 0;
+  color: #4da6ff;
+  text-shadow: 0 0 30px rgba(77, 166, 255, 0.45);
+}
+
+.title .tagline {
+  color: #8fa3c0;
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.titlerow {
+  display: flex;
+  gap: 10px;
+}
+
+.titlerow button {
+  font-size: 16px;
+  padding: 8px 28px;
+}
+
+.title .hint {
+  max-width: 480px;
+  color: #5d7090;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---- game screen ---- */
+
+.game {
+  position: relative;
+  height: 100%;
+}
+
+.map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: rgba(8, 12, 24, 0.85);
+  border-bottom: 1px solid #1b2742;
+  font-size: 14px;
+}
+
+.topbar .stat.power {
+  font-weight: 700;
+  color: #ffd76a;
+}
+
+.topbar .dim {
+  color: #5d7090;
+  font-size: 12px;
+}
+
+.topbar .spacer {
+  flex: 1;
+}
+
+.leaderboard {
+  position: absolute;
+  top: 52px;
+  right: 10px;
+  width: 215px;
+  background: rgba(8, 12, 24, 0.85);
+  border: 1px solid #1b2742;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 13px;
+}
+
+.leaderboard .row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 4px;
+  border-radius: 4px;
+}
+
+.leaderboard .row.me {
+  background: rgba(77, 166, 255, 0.12);
+}
+
+.leaderboard .row.dead {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.leaderboard .swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.leaderboard .name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaderboard .planets {
+  width: 24px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.leaderboard .power {
+  width: 58px;
+  text-align: right;
+  color: #8fa3c0;
+}
+
+.events {
+  position: absolute;
+  left: 12px;
+  bottom: 64px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+  text-shadow: 0 1px 3px #000;
+}
+
+.commitbar {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(8, 12, 24, 0.9);
+  border: 1px solid #1b2742;
+  border-radius: 10px;
+  padding: 10px 18px;
+}
+
+.commitbar .label {
+  color: #8fa3c0;
+  font-size: 13px;
+}
+
+.commitbar input[type='range'] {
+  width: 260px;
+  padding: 0;
+}
+
+.commitbar .pct {
+  font-weight: 700;
+  width: 44px;
+  font-size: 16px;
+}
+
+.commitbar .amount {
+  color: #ffd76a;
+  font-size: 13px;
+  width: 80px;
+}
+
+.banner {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(40, 12, 18, 0.92);
+  border: 1px solid #7f1d2d;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 5, 10, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay .panel {
+  background: #0c1322;
+  border: 1px solid #2c3c63;
+  border-radius: 12px;
+  padding: 32px 48px;
+  text-align: center;
+}
+
+.overlay h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+.overlay p {
+  color: #8fa3c0;
+  margin: 0 0 20px;
+}
